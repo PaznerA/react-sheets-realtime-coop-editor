@@ -22,7 +22,8 @@ const SelectInput: React.FC<SelectInputProps> = ({
   options = [], // Default to empty array if options is undefined
   onValueChange 
 }) => {
-  const [open, setOpen] = useState(true);
+  // Start with open=false to prevent initial render errors with empty options
+  const [open, setOpen] = useState(false);
   
   // Safety check to ensure options is always an array
   const safeOptions = Array.isArray(options) ? options : [];
@@ -31,14 +32,6 @@ const SelectInput: React.FC<SelectInputProps> = ({
     onValueChange(selectedValue);
     setOpen(false);
   };
-
-  // Add a useEffect to prevent rendering with empty options (which can cause the crash)
-  useEffect(() => {
-    // If no options available, close the popover
-    if (safeOptions.length === 0) {
-      setOpen(false);
-    }
-  }, [safeOptions]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -53,28 +46,30 @@ const SelectInput: React.FC<SelectInputProps> = ({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Hledat..." />
-          <CommandEmpty>Žádné možnosti.</CommandEmpty>
-          <CommandGroup>
-            {safeOptions.map((option) => (
-              <CommandItem
-                key={option}
-                value={option}
-                onSelect={() => handleSelectOption(option)}
-              >
-                <Check
-                  className={`mr-2 h-4 w-4 ${
-                    value === option ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-                {option}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
+      {safeOptions.length > 0 && (
+        <PopoverContent className="w-[200px] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Hledat..." />
+            <CommandEmpty>Žádné možnosti.</CommandEmpty>
+            <CommandGroup>
+              {safeOptions.map((option) => (
+                <CommandItem
+                  key={option}
+                  value={option}
+                  onSelect={() => handleSelectOption(option)}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${
+                      value === option ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  {option}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      )}
     </Popover>
   );
 };
