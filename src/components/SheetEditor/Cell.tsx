@@ -101,6 +101,11 @@ const Cell: React.FC<CellProps> = ({
     setOpen(false);
   };
 
+  // Ensure options is always an array, even if undefined
+  const getOptions = () => {
+    return Array.isArray(column.options) ? column.options : [];
+  };
+
   // Render different cell types
   const renderCellContent = () => {
     if (isEditing) {
@@ -148,7 +153,7 @@ const Cell: React.FC<CellProps> = ({
                   <CommandInput placeholder="Hledat..." />
                   <CommandEmpty>Žádné možnosti.</CommandEmpty>
                   <CommandGroup>
-                    {Array.isArray(column.options) && column.options.map((option) => (
+                    {getOptions().map((option) => (
                       <CommandItem
                         key={option}
                         value={option}
@@ -169,7 +174,9 @@ const Cell: React.FC<CellProps> = ({
           );
 
         case 'multiselect':
-          // Simplified multiselect - in a full implementation would need more complex UI
+          // Ensure value is always an array for multiselect
+          const currentValues = Array.isArray(value) ? value : [];
+          
           return (
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
@@ -179,8 +186,8 @@ const Cell: React.FC<CellProps> = ({
                   aria-expanded={open}
                   className="w-full justify-between h-8"
                 >
-                  {Array.isArray(value) && value.length > 0 
-                    ? value.join(', ') 
+                  {currentValues.length > 0 
+                    ? currentValues.join(', ') 
                     : "Vyberte možnosti"}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -190,13 +197,12 @@ const Cell: React.FC<CellProps> = ({
                   <CommandInput placeholder="Hledat..." />
                   <CommandEmpty>Žádné možnosti.</CommandEmpty>
                   <CommandGroup>
-                    {Array.isArray(column.options) && column.options.map((option) => (
+                    {getOptions().map((option) => (
                       <CommandItem
                         key={option}
                         value={option}
                         onSelect={() => {
                           // Toggle selected values for multiselect
-                          const currentValues = Array.isArray(value) ? [...value] : [];
                           const newValues = currentValues.includes(option)
                             ? currentValues.filter(v => v !== option)
                             : [...currentValues, option];
@@ -206,7 +212,7 @@ const Cell: React.FC<CellProps> = ({
                       >
                         <Check
                           className={`mr-2 h-4 w-4 ${
-                            Array.isArray(value) && value.includes(option) 
+                            currentValues.includes(option) 
                               ? "opacity-100" 
                               : "opacity-0"
                           }`}
@@ -257,7 +263,7 @@ const Cell: React.FC<CellProps> = ({
             : null;
         
         case 'multiselect':
-          return Array.isArray(value) ? value.join(', ') : value;
+          return Array.isArray(value) ? value.join(', ') : (value || '');
           
         case 'user':
           return (
