@@ -197,29 +197,34 @@ const Cell: React.FC<CellProps> = ({
                   <CommandInput placeholder="Hledat..." />
                   <CommandEmpty>Žádné možnosti.</CommandEmpty>
                   <CommandGroup>
-                    {getOptions().map((option) => (
-                      <CommandItem
-                        key={option}
-                        value={option}
-                        onSelect={() => {
-                          // Toggle selected values for multiselect
-                          const newValues = currentValues.includes(option)
-                            ? currentValues.filter(v => v !== option)
-                            : [...currentValues, option];
-                          setValue(newValues);
-                          onFinishEdit(newValues);
-                        }}
-                      >
-                        <Check
-                          className={`mr-2 h-4 w-4 ${
-                            currentValues.includes(option) 
-                              ? "opacity-100" 
-                              : "opacity-0"
-                          }`}
-                        />
-                        {option}
-                      </CommandItem>
-                    ))}
+                    {getOptions().map((option) => {
+                      // SafeGuard against null or undefined options
+                      if (!option) return null;
+                      
+                      return (
+                        <CommandItem
+                          key={option}
+                          value={option}
+                          onSelect={() => {
+                            // Toggle selected values for multiselect
+                            const newValues = currentValues.includes(option)
+                              ? currentValues.filter(v => v !== option)
+                              : [...currentValues, option];
+                            setValue(newValues);
+                            onFinishEdit(newValues);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              currentValues.includes(option) 
+                                ? "opacity-100" 
+                                : "opacity-0"
+                            }`}
+                          />
+                          {option}
+                        </CommandItem>
+                      );
+                    })}
                   </CommandGroup>
                 </Command>
               </PopoverContent>
@@ -237,7 +242,7 @@ const Cell: React.FC<CellProps> = ({
                 onChange={handleInputChange}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-7 p-0"
+                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-7 p-0 min-w-[calc(100%-2rem)]"
               />
             </div>
           );
@@ -250,7 +255,7 @@ const Cell: React.FC<CellProps> = ({
               onChange={handleInputChange}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              className="h-8 py-1"
+              className="h-8 py-1 min-w-[calc(100%-0.5rem)]"
             />
           );
       }

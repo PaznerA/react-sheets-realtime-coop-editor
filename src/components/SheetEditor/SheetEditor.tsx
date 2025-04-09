@@ -100,15 +100,15 @@ const SheetEditor: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full border rounded-md shadow-sm">
+    <div className="flex flex-col h-full border rounded-md shadow-soft overflow-hidden">
       {/* Toolbar */}
-      <div className="p-2 border-b flex items-center justify-between bg-white">
+      <div className="p-2 border-b flex items-center justify-between bg-sheet-header">
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleAddRow}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 bg-white"
           >
             <PlusCircle className="h-4 w-4" />
             Přidat řádek
@@ -128,7 +128,7 @@ const SheetEditor: React.FC = () => {
         </div>
 
         <div>
-          <Button variant="default" size="sm" className="flex items-center gap-1">
+          <Button variant="default" size="sm" className="flex items-center gap-1 bg-primary">
             <Save className="h-4 w-4" />
             Uložit změny
           </Button>
@@ -139,7 +139,7 @@ const SheetEditor: React.FC = () => {
       <SheetHeader columns={sheetData.columns} />
       
       {/* Sheet Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-white">
         <div className="min-w-max">
           {renderRows()}
         </div>

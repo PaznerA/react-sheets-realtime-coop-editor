@@ -64,11 +64,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				sheet: {
-					header: '#f3f4f6',
-					group: '#f9fafb',
-					border: '#e5e7eb',
-					highlight: '#e0e7ff',
-					selected: '#c7d2fe',
+					header: 'hsl(var(--sheet-header))',
+					group: 'hsl(var(--sheet-group))',
+					border: 'hsl(var(--sheet-border))',
+					highlight: 'hsl(var(--sheet-highlight))',
+					selected: 'hsl(var(--sheet-selected))',
 				}
 			},
 			borderRadius: {

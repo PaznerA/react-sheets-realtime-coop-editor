@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 214 89% 17%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -32,23 +33,22 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.3rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 215 28% 27%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 215 28% 27%;
+    --sidebar-accent: 213 30% 32%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 213 30% 32%;
+    --sidebar-ring: 214 85% 67%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sheet-header: 210 33% 96%;
+    --sheet-group: 210 33% 98%;
+    --sheet-border: 220 10% 90%;
+    --sheet-highlight: 214 100% 97%;
+    --sheet-selected: 214 80% 92%;
   }
 
   .dark {
@@ -79,14 +79,21 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
+    
+    --sidebar-background: 215 28% 17%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent: 215 30% 22%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-border: 215 30% 22%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    --sheet-header: 215 28% 22%;
+    --sheet-group: 215 28% 20%;
+    --sheet-border: 215 28% 25%;
+    --sheet-highlight: 215 50% 30%;
+    --sheet-selected: 215 50% 35%;
   }
 }
 
@@ -98,4 +105,29 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.shadow-soft {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+}
+
+/* Bosch inspired table styles */
+.table-bosch {
+  @apply w-full border-collapse;
+}
+
+.table-bosch th {
+  @apply bg-primary text-primary-foreground font-medium text-left px-3 py-2;
+}
+
+.table-bosch td {
+  @apply px-3 py-2 border-b border-sheet-border;
+}
+
+.table-bosch tr:nth-child(even) {
+  @apply bg-sheet-group;
+}
+
+.table-bosch tr:hover {
+  @apply bg-sheet-highlight;
 }

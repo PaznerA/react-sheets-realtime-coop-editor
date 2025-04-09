@@ -56,14 +56,16 @@ const Editor = () => {
   }
 
   return (
-    <div className="h-full">
-      <header className="bg-white shadow-sm p-4">
-        <h1 className="text-2xl font-bold text-gray-800">{project.name}</h1>
-        <p className="text-sm text-gray-500">{project.description}</p>
+    <div className="h-full flex flex-col">
+      <header className="bg-primary text-primary-foreground shadow-md p-4">
+        <div className="container mx-auto">
+          <h1 className="text-2xl font-bold">{project.name}</h1>
+          <p className="text-sm opacity-80">{project.description}</p>
+        </div>
       </header>
 
-      <main className="flex-1 container mx-auto p-4">
-        <div className="bg-white rounded-lg shadow">
+      <main className="flex-1 container mx-auto py-6 px-4">
+        <div className="bg-white rounded-md shadow-soft">
           <div className="p-4">
             <h2 className="text-lg font-medium mb-4">Správa dat</h2>
             <SheetProvider initialData={sheetData} sheetId={project.sheetId}>
