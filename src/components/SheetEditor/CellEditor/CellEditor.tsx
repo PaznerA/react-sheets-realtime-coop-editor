@@ -33,6 +33,9 @@ const CellEditor: React.FC<CellEditorProps> = ({
     }
   };
 
+  // Ensure column.options is always an array
+  const safeOptions = Array.isArray(column.options) ? column.options : [];
+
   // Render appropriate editor based on column type and edit state
   const renderEditor = () => {
     if (isEditing) {
@@ -58,13 +61,13 @@ const CellEditor: React.FC<CellEditorProps> = ({
         case 'select':
           return <SelectInput 
             value={cell.value as string} 
-            options={column.options || []} 
+            options={safeOptions} 
             onValueChange={onFinishEdit} 
           />;
         case 'multiselect':
           return <MultiSelectInput 
             value={Array.isArray(cell.value) ? cell.value : []} 
-            options={column.options || []} 
+            options={safeOptions} 
             onValueChange={onFinishEdit} 
           />;
         case 'user':

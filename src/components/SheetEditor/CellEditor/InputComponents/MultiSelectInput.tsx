@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ interface MultiSelectInputProps {
 
 const MultiSelectInput: React.FC<MultiSelectInputProps> = ({ 
   value, 
-  options, 
+  options = [], // Default to empty array if options is undefined
   onValueChange 
 }) => {
   const [open, setOpen] = useState(true);
@@ -29,6 +29,14 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
   
   // Ensure value is always an array
   const safeValue = Array.isArray(value) ? value : [];
+
+  // Add a useEffect to prevent rendering with empty options (which can cause the crash)
+  useEffect(() => {
+    // If no options available, close the popover
+    if (safeOptions.length === 0) {
+      setOpen(false);
+    }
+  }, [safeOptions]);
 
   const handleToggleOption = (option: string) => {
     const newValues = safeValue.includes(option)
@@ -44,7 +52,7 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between h-8"
+          className="w-full justify-between h-8 min-h-[32px]"
         >
           {safeValue.length > 0 
             ? safeValue.join(', ') 
