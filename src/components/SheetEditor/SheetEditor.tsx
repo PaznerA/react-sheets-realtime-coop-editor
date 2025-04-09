@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import GroupDialog from './GroupDialog';
 import { toast } from 'sonner';
 
 const SheetEditor: React.FC = () => {
-  const { sheetData, addRowAfter } = useSheet();
+  const { sheetData, addRowAfter, addRow } = useSheet();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
   // Function to handle row selection for grouping
@@ -69,13 +70,29 @@ const SheetEditor: React.FC = () => {
 
   // Add row at the end
   const handleAddRow = () => {
-    const lastRow = [...sheetData.rows]
-      .sort((a, b) => a.order - b.order)
-      .slice(-1)[0];
-    
-    if (lastRow) {
+    // Check if we have existing rows
+    if (sheetData.rows.length > 0) {
+      // Get the last row to add after it
+      const lastRow = [...sheetData.rows]
+        .sort((a, b) => a.order - b.order)
+        .slice(-1)[0];
+      
       addRowAfter(lastRow.id);
       toast.success('Nový řádek byl přidán.');
+    } else {
+      // No existing rows, create first row
+      const newCells = sheetData.columns.map(column => ({
+        id: Math.random().toString(36).substring(2, 15),
+        columnId: column.id,
+        value: null
+      }));
+      
+      // Add first row with order 0
+      addRow({
+        cells: newCells,
+        order: 0
+      });
+      toast.success('První řádek byl přidán.');
     }
   };
 

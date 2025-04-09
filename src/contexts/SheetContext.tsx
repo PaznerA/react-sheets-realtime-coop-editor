@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { SheetData, SheetRow, CellDefinition, Cell, SheetRevision } from "@/types/sheet";
 import { saveSheetData } from "@/services/projectService";
@@ -18,10 +17,8 @@ interface SheetContextType {
   loadRevision: (revisionIndex: number) => void;
   toggleGroupExpanded: (groupId: string) => void;
   
-  // Added missing methods needed by components
   createGroup: (name: string, rowIds: string[]) => void;
   saveRevision: (description: string) => void;
-  loadRevision: (revisionIndex: number) => void;
   toggleGroup: (groupId: string) => void;
   addRowAfter: (rowId: string) => void;
   addRowBefore: (rowId: string) => void;
@@ -57,7 +54,6 @@ export function SheetProvider({
     }
   );
 
-  // Save data to localStorage whenever it changes
   useEffect(() => {
     if (sheetId) {
       saveSheetData(sheetId, sheetData);
@@ -98,7 +94,6 @@ export function SheetProvider({
       const [removedRow] = rows.splice(rowIndex, 1);
       rows.splice(targetIndex, 0, removedRow);
       
-      // Update order property
       const updatedRows = rows.map((row, index) => ({
         ...row,
         order: index,
@@ -116,16 +111,13 @@ export function SheetProvider({
       ...prevData,
       rows: prevData.rows.map((row) => {
         if (row.id === rowId) {
-          // Find the cell with the matching columnId
           const cellIndex = row.cells.findIndex(cell => cell.columnId === columnId);
           
           if (cellIndex !== -1) {
-            // Update existing cell
             const updatedCells = [...row.cells];
             updatedCells[cellIndex] = { ...updatedCells[cellIndex], value };
             return { ...row, cells: updatedCells };
           } else {
-            // Create new cell if it doesn't exist
             const newCell: Cell = {
               id: Math.random().toString(36).substring(2, 15),
               columnId,
@@ -146,10 +138,8 @@ export function SheetProvider({
     };
     
     setSheetData((prevData) => {
-      // Add the new column
       const updatedColumns = [...prevData.columns, newColumn];
       
-      // Add a new cell for this column to each existing row
       const updatedRows = prevData.rows.map((row) => {
         const newCell: Cell = {
           id: Math.random().toString(36).substring(2, 15),
@@ -181,10 +171,8 @@ export function SheetProvider({
 
   const deleteColumn = (columnId: string) => {
     setSheetData((prevData) => {
-      // Remove the column
       const updatedColumns = prevData.columns.filter((column) => column.id !== columnId);
       
-      // Remove all cells for this column from each row
       const updatedRows = prevData.rows.map((row) => ({
         ...row,
         cells: row.cells.filter((cell) => cell.columnId !== columnId),
@@ -217,7 +205,7 @@ export function SheetProvider({
       id: Math.random().toString(36).substring(2, 15),
       timestamp: new Date(),
       description,
-      rows: JSON.parse(JSON.stringify(sheetData.rows)), // Deep copy
+      rows: JSON.parse(JSON.stringify(sheetData.rows)),
     };
     
     setSheetData((prevData) => ({
@@ -227,7 +215,6 @@ export function SheetProvider({
     }));
   };
 
-  // Alias for createRevision to match component usage
   const saveRevision = createRevision;
 
   const loadRevision = (revisionIndex: number) => {
@@ -238,7 +225,7 @@ export function SheetProvider({
       
       return {
         ...prevData,
-        rows: JSON.parse(JSON.stringify(prevData.revisions[revisionIndex].rows)), // Deep copy
+        rows: JSON.parse(JSON.stringify(prevData.revisions[revisionIndex].rows)),
         currentRevision: revisionIndex,
       };
     });
@@ -255,7 +242,6 @@ export function SheetProvider({
     }));
   };
 
-  // Alias for toggleGroupExpanded to match component usage
   const toggleGroup = toggleGroupExpanded;
 
   const addRowAfter = (rowId: string) => {
@@ -268,23 +254,20 @@ export function SheetProvider({
       const referenceRow = rows[rowIndex];
       const newRowOrder = referenceRow.order + 1;
       
-      // Shift orders of subsequent rows
       const updatedRows = rows.map(row => 
         row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
       );
       
-      // Create empty cells for all columns
       const newCells = prevData.columns.map(column => ({
         id: Math.random().toString(36).substring(2, 15),
         columnId: column.id,
         value: null
       }));
       
-      // Create the new row
       const newRow: SheetRow = {
         id: Math.random().toString(36).substring(2, 15),
         cells: newCells,
-        parentId: referenceRow.parentId, // Inherit parent if any
+        parentId: referenceRow.parentId,
         order: newRowOrder
       };
       
@@ -305,23 +288,20 @@ export function SheetProvider({
       const referenceRow = rows[rowIndex];
       const newRowOrder = referenceRow.order;
       
-      // Shift orders of this row and subsequent rows
       const updatedRows = rows.map(row => 
         row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
       );
       
-      // Create empty cells for all columns
       const newCells = prevData.columns.map(column => ({
         id: Math.random().toString(36).substring(2, 15),
         columnId: column.id,
         value: null
       }));
       
-      // Create the new row
       const newRow: SheetRow = {
         id: Math.random().toString(36).substring(2, 15),
         cells: newCells,
-        parentId: referenceRow.parentId, // Inherit parent if any
+        parentId: referenceRow.parentId,
         order: newRowOrder
       };
       
@@ -336,34 +316,31 @@ export function SheetProvider({
     setSheetData((prevData) => {
       const rows = [...prevData.rows];
       
-      // Find the minimum order value among selected rows to place the group
       const selectedRows = rows.filter(row => rowIds.includes(row.id));
+      if (selectedRows.length === 0) return prevData;
+      
       const minOrder = Math.min(...selectedRows.map(row => row.order));
       
-      // Shift orders to make space for the group
       const updatedRows = rows.map(row => 
         row.order >= minOrder ? { ...row, order: row.order + 1 } : row
       );
       
-      // Create a group cell with the name
       const groupCell: Cell = {
         id: Math.random().toString(36).substring(2, 15),
-        columnId: '', // Empty columnId for the group name cell
+        columnId: '',
         value: name
       };
       
-      // Create the group row
       const groupId = Math.random().toString(36).substring(2, 15);
       const groupRow: SheetRow = {
         id: groupId,
         cells: [groupCell],
         isGroup: true,
         groupName: name,
-        expanded: true, // Expanded by default
+        expanded: true,
         order: minOrder
       };
       
-      // Update selected rows to be children of this group
       const rowsWithParents = updatedRows.map(row => 
         rowIds.includes(row.id) 
           ? { ...row, parentId: groupId }
@@ -392,7 +369,6 @@ export function SheetProvider({
     loadRevision,
     toggleGroupExpanded,
     
-    // Add aliases and new methods
     saveRevision,
     toggleGroup,
     addRowAfter,
