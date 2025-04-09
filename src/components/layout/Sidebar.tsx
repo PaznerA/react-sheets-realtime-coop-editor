@@ -10,7 +10,7 @@ import {
   SidebarMenuItem, 
   SidebarMenuButton 
 } from "@/components/ui/sidebar";
-import { Home, FileSpreadsheet, Settings, Info, Github } from "lucide-react";
+import { Home, FileSpreadsheet, Settings, Info, Github, ListOrdered } from "lucide-react";
 
 export const AppSidebar: React.FC = () => {
   const location = useLocation();
@@ -38,10 +38,19 @@ export const AppSidebar: React.FC = () => {
           </SidebarMenuItem>
           
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/editor")}>
+            <SidebarMenuButton asChild isActive={isActive("/editor") || location.pathname.startsWith("/editor/")}>
               <Link to="/editor">
                 <FileSpreadsheet />
                 <span>Editor</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/enums")}>
+              <Link to="/enums">
+                <ListOrdered />
+                <span>Enums</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

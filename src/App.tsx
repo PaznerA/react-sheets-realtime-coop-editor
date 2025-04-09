@@ -9,33 +9,38 @@ import { AppSidebar } from "@/components/layout/Sidebar";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
 import Editor from "./pages/Editor";
+import Enums from "./pages/Enums";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { EnumProvider } from "./contexts/EnumContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <SidebarProvider>
-          <div className="flex min-h-screen w-full">
-            <AppSidebar />
-            <SidebarInset className="bg-gray-50">
-              <Routes>
-                <Route path="/" element={<Projects />} />
-                <Route path="/editor" element={<Editor />} />
-                <Route path="/editor/:projectId" element={<Editor />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </SidebarInset>
-          </div>
-        </SidebarProvider>
-      </BrowserRouter>
+      <EnumProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <SidebarProvider>
+            <div className="flex min-h-screen w-full">
+              <AppSidebar />
+              <SidebarInset className="bg-gray-50">
+                <Routes>
+                  <Route path="/" element={<Projects />} />
+                  <Route path="/editor" element={<Editor />} />
+                  <Route path="/editor/:projectId" element={<Editor />} />
+                  <Route path="/enums" element={<Enums />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SidebarInset>
+            </div>
+          </SidebarProvider>
+        </BrowserRouter>
+      </EnumProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

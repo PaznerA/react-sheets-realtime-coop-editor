@@ -16,6 +16,7 @@ export interface CellDefinition {
   type: CellDataType;
   required?: boolean;
   options?: string[]; // For select/multiselect types
+  enumId?: string;    // Reference to an Enum for select/multiselect types
   validation?: RegExp | string; // For validation rules (email, etc.)
 }
 

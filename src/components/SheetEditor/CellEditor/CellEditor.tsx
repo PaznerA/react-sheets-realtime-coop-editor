@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Cell as CellType, CellDefinition } from '@/types/sheet';
+import { useEnums } from '@/contexts/EnumContext';
 import TextDisplay from './DisplayComponents/TextDisplay';
 import DateDisplay from './DisplayComponents/DateDisplay';
 import UserDisplay from './DisplayComponents/UserDisplay';
@@ -27,6 +28,8 @@ const CellEditor: React.FC<CellEditorProps> = ({
   onStartEdit,
   onFinishEdit
 }) => {
+  const { getEnum } = useEnums();
+
   const handleDblClick = () => {
     if (!isEditing) {
       onStartEdit();
@@ -35,6 +38,15 @@ const CellEditor: React.FC<CellEditorProps> = ({
 
   // Ensure column.options is always an array
   const safeOptions = Array.isArray(column.options) ? column.options : [];
+
+  // If enumId is provided, use its values instead of options
+  let options = safeOptions;
+  if (column.enumId) {
+    const enumData = getEnum(column.enumId);
+    if (enumData) {
+      options = enumData.values.map(v => v.value);
+    }
+  }
 
   // Render appropriate editor based on column type and edit state
   const renderEditor = () => {
@@ -61,13 +73,13 @@ const CellEditor: React.FC<CellEditorProps> = ({
         case 'select':
           return <SelectInput 
             value={cell.value as string} 
-            options={safeOptions} 
+            options={options} 
             onValueChange={onFinishEdit} 
           />;
         case 'multiselect':
           return <MultiSelectInput 
             value={Array.isArray(cell.value) ? cell.value : []} 
-            options={safeOptions} 
+            options={options} 
             onValueChange={onFinishEdit} 
           />;
         case 'user':
