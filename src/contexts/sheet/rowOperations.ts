@@ -58,6 +58,7 @@ export const addRowAfter = (prevData: SheetData, rowId: string): SheetData => {
     row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
   );
   
+  // Create cells for each column in the sheet
   const newCells = prevData.columns.map(column => ({
     id: Math.random().toString(36).substring(2, 15),
     columnId: column.id,
@@ -90,6 +91,7 @@ export const addRowBefore = (prevData: SheetData, rowId: string): SheetData => {
     row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
   );
   
+  // Create cells for each column in the sheet
   const newCells = prevData.columns.map(column => ({
     id: Math.random().toString(36).substring(2, 15),
     columnId: column.id,

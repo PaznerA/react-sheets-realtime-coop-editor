@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { SheetData } from "@/types/sheet";
 import { saveSheetData } from "@/services/projectService";
 import { SheetContextType, SheetProviderProps } from "./sheet/types";
+import { createEmptySheet } from "@/data/defaultTemplates";
 
 // Import operations
 import * as rowOps from "./sheet/rowOperations";
@@ -26,12 +27,7 @@ export function SheetProvider({
   sheetId = "default",
 }: SheetProviderProps) {
   const [sheetData, setSheetData] = useState<SheetData>(
-    initialData || {
-      columns: [],
-      rows: [],
-      revisions: [],
-      currentRevision: 0,
-    }
+    initialData || createEmptySheet()
   );
 
   useEffect(() => {
@@ -41,11 +37,11 @@ export function SheetProvider({
   }, [sheetData, sheetId]);
 
   // Row operations
-  const addRow = (row: Omit<SheetProps, "id">) => {
+  const addRow = (row: Omit<SheetRow, "id">) => {
     setSheetData(prevData => rowOps.addRow(prevData, row));
   };
 
-  const updateRow = (rowId: string, updatedRow: Partial<SheetProps>) => {
+  const updateRow = (rowId: string, updatedRow: Partial<SheetRow>) => {
     setSheetData(prevData => rowOps.updateRow(prevData, rowId, updatedRow));
   };
 

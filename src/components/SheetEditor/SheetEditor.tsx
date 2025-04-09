@@ -9,6 +9,7 @@ import Row from './Row';
 import RevisionPanel from './RevisionPanel';
 import GroupDialog from './GroupDialog';
 import { toast } from 'sonner';
+import { SheetRow } from '@/types/sheet';
 
 const SheetEditor: React.FC = () => {
   const { sheetData, addRowAfter, addRow } = useSheet();
@@ -80,7 +81,7 @@ const SheetEditor: React.FC = () => {
       addRowAfter(lastRow.id);
       toast.success('Nový řádek byl přidán.');
     } else {
-      // No existing rows, create first row
+      // No existing rows, create first row with cells for each column
       const newCells = sheetData.columns.map(column => ({
         id: Math.random().toString(36).substring(2, 15),
         columnId: column.id,
@@ -88,10 +89,12 @@ const SheetEditor: React.FC = () => {
       }));
       
       // Add first row with order 0
-      addRow({
+      const newRow: Omit<SheetRow, "id"> = {
         cells: newCells,
         order: 0
-      });
+      };
+      
+      addRow(newRow);
       toast.success('První řádek byl přidán.');
     }
   };

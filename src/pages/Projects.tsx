@@ -11,12 +11,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TemplateSelector from "@/components/TemplateSelector/TemplateSelector";
+import { createSheetFromTemplate, createEmptySheet } from "@/data/defaultTemplates";
+import { saveSheetData } from "@/services/projectService";
 
 const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>(getProjects());
   const [searchTerm, setSearchTerm] = useState("");
   const [newProject, setNewProject] = useState({ name: "", description: "", sheetId: "" });
+  const [selectedTemplateId, setSelectedTemplateId] = useState("requirements-template");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("template");
 
   const filteredProjects = projects.filter(project => 
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -33,10 +39,25 @@ const Projects: React.FC = () => {
       return;
     }
 
+    // Generate sheet ID
+    const sheetId = `sheet-${Date.now()}`;
+    
+    // Create sheet data based on template or empty
+    let sheetData;
+    if (activeTab === "template" && selectedTemplateId) {
+      sheetData = createSheetFromTemplate(selectedTemplateId);
+    } else {
+      sheetData = createEmptySheet();
+    }
+    
+    // Save sheet data
+    saveSheetData(sheetId, sheetData);
+    
+    // Create project
     const createdProject = createProject({
       name: newProject.name,
       description: newProject.description,
-      sheetId: `sheet-${Date.now()}`
+      sheetId: sheetId
     });
 
     setProjects([...projects, createdProject]);
@@ -77,7 +98,7 @@ const Projects: React.FC = () => {
                 Nový projekt
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Vytvořit nový projekt</DialogTitle>
                 <DialogDescription>
@@ -101,6 +122,26 @@ const Projects: React.FC = () => {
                     value={newProject.description}
                     onChange={(e) => setNewProject({...newProject, description: e.target.value})}
                   />
+                </div>
+                
+                <div className="mt-4">
+                  <Tabs defaultValue="template" value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="template">Použít šablonu</TabsTrigger>
+                      <TabsTrigger value="empty">Prázdný projekt</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="template" className="mt-4">
+                      <TemplateSelector 
+                        onSelectTemplate={setSelectedTemplateId}
+                        selectedTemplateId={selectedTemplateId}
+                      />
+                    </TabsContent>
+                    <TabsContent value="empty" className="mt-4">
+                      <div className="bg-muted p-4 rounded-lg text-center">
+                        <p>Projekt bude vytvořen s prázdným listem a základními sloupci.</p>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </div>
               

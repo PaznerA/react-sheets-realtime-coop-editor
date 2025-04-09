@@ -6,6 +6,7 @@ import SheetEditor from "@/components/SheetEditor/SheetEditor";
 import { getProject, getSheetData, saveSheetData } from "@/services/projectService";
 import { SheetData } from "@/types/sheet";
 import { toast } from "@/components/ui/use-toast";
+import { createEmptySheet } from "@/data/defaultTemplates";
 
 const Editor = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -23,12 +24,7 @@ const Editor = () => {
           setSheetData(sheet);
         } else {
           // Initialize with empty sheet if none exists
-          const emptySheet: SheetData = {
-            columns: [],
-            rows: [],
-            revisions: [],
-            currentRevision: 0
-          };
+          const emptySheet = createEmptySheet();
           setSheetData(emptySheet);
           saveSheetData(projectData.sheetId, emptySheet);
         }
