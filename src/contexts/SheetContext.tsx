@@ -1,28 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { SheetData, SheetRow, CellDefinition, Cell, SheetRevision } from "@/types/sheet";
-import { saveSheetData } from "@/services/projectService";
 
-interface SheetContextType {
-  sheetData: SheetData;
-  addRow: (row: Omit<SheetRow, "id">) => void;
-  updateRow: (rowId: string, updatedRow: Partial<SheetRow>) => void;
-  deleteRow: (rowId: string) => void;
-  moveRow: (rowId: string, targetIndex: number) => void;
-  updateCell: (rowId: string, columnId: string, value: Cell["value"]) => void;
-  addColumn: (column: Omit<CellDefinition, "id">) => void;
-  updateColumn: (columnId: string, updatedColumn: Partial<CellDefinition>) => void;
-  deleteColumn: (columnId: string) => void;
-  moveColumn: (columnId: string, targetIndex: number) => void;
-  createRevision: (description: string) => void;
-  loadRevision: (revisionIndex: number) => void;
-  toggleGroupExpanded: (groupId: string) => void;
-  
-  createGroup: (name: string, rowIds: string[]) => void;
-  saveRevision: (description: string) => void;
-  toggleGroup: (groupId: string) => void;
-  addRowAfter: (rowId: string) => void;
-  addRowBefore: (rowId: string) => void;
-}
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { SheetData } from "@/types/sheet";
+import { saveSheetData } from "@/services/projectService";
+import { SheetContextType, SheetProviderProps } from "./sheet/types";
+
+// Import operations
+import * as rowOps from "./sheet/rowOperations";
+import * as cellOps from "./sheet/cellOperations";
+import * as columnOps from "./sheet/columnOperations";
+import * as revisionOps from "./sheet/revisionOperations";
 
 const SheetContext = createContext<SheetContextType | undefined>(undefined);
 
@@ -32,12 +18,6 @@ export function useSheet() {
     throw new Error("useSheet must be used within a SheetProvider");
   }
   return context;
-}
-
-interface SheetProviderProps {
-  children: React.ReactNode;
-  initialData?: SheetData;
-  sheetId?: string;
 }
 
 export function SheetProvider({
@@ -60,299 +40,74 @@ export function SheetProvider({
     }
   }, [sheetData, sheetId]);
 
-  const addRow = (row: Omit<SheetRow, "id">) => {
-    const newRow: SheetRow = {
-      id: Math.random().toString(36).substring(2, 15),
-      ...row,
-    };
-    setSheetData((prevData) => ({
-      ...prevData,
-      rows: [...prevData.rows, newRow],
-    }));
+  // Row operations
+  const addRow = (row: Omit<SheetProps, "id">) => {
+    setSheetData(prevData => rowOps.addRow(prevData, row));
   };
 
-  const updateRow = (rowId: string, updatedRow: Partial<SheetRow>) => {
-    setSheetData((prevData) => ({
-      ...prevData,
-      rows: prevData.rows.map((row) =>
-        row.id === rowId ? { ...row, ...updatedRow } : row
-      ),
-    }));
+  const updateRow = (rowId: string, updatedRow: Partial<SheetProps>) => {
+    setSheetData(prevData => rowOps.updateRow(prevData, rowId, updatedRow));
   };
 
   const deleteRow = (rowId: string) => {
-    setSheetData((prevData) => ({
-      ...prevData,
-      rows: prevData.rows.filter((row) => row.id !== rowId),
-    }));
+    setSheetData(prevData => rowOps.deleteRow(prevData, rowId));
   };
 
   const moveRow = (rowId: string, targetIndex: number) => {
-    setSheetData((prevData) => {
-      const rows = [...prevData.rows];
-      const rowIndex = rows.findIndex((row) => row.id === rowId);
-      const [removedRow] = rows.splice(rowIndex, 1);
-      rows.splice(targetIndex, 0, removedRow);
-      
-      const updatedRows = rows.map((row, index) => ({
-        ...row,
-        order: index,
-      }));
-      
-      return {
-        ...prevData,
-        rows: updatedRows,
-      };
-    });
+    setSheetData(prevData => rowOps.moveRow(prevData, rowId, targetIndex));
   };
 
-  const updateCell = (rowId: string, columnId: string, value: Cell["value"]) => {
-    setSheetData((prevData) => ({
-      ...prevData,
-      rows: prevData.rows.map((row) => {
-        if (row.id === rowId) {
-          const cellIndex = row.cells.findIndex(cell => cell.columnId === columnId);
-          
-          if (cellIndex !== -1) {
-            const updatedCells = [...row.cells];
-            updatedCells[cellIndex] = { ...updatedCells[cellIndex], value };
-            return { ...row, cells: updatedCells };
-          } else {
-            const newCell: Cell = {
-              id: Math.random().toString(36).substring(2, 15),
-              columnId,
-              value
-            };
-            return { ...row, cells: [...row.cells, newCell] };
-          }
-        }
-        return row;
-      }),
-    }));
+  const addRowAfter = (rowId: string) => {
+    setSheetData(prevData => rowOps.addRowAfter(prevData, rowId));
   };
 
+  const addRowBefore = (rowId: string) => {
+    setSheetData(prevData => rowOps.addRowBefore(prevData, rowId));
+  };
+
+  const toggleGroupExpanded = (groupId: string) => {
+    setSheetData(prevData => rowOps.toggleGroupExpanded(prevData, groupId));
+  };
+
+  const createGroup = (name: string, rowIds: string[]) => {
+    setSheetData(prevData => rowOps.createGroup(prevData, name, rowIds));
+  };
+
+  // Cell operations
+  const updateCell = (rowId: string, columnId: string, value: any) => {
+    setSheetData(prevData => cellOps.updateCell(prevData, rowId, columnId, value));
+  };
+
+  // Column operations
   const addColumn = (column: Omit<CellDefinition, "id">) => {
-    const newColumn: CellDefinition = {
-      id: Math.random().toString(36).substring(2, 15),
-      ...column,
-    };
-    
-    setSheetData((prevData) => {
-      const updatedColumns = [...prevData.columns, newColumn];
-      
-      const updatedRows = prevData.rows.map((row) => {
-        const newCell: Cell = {
-          id: Math.random().toString(36).substring(2, 15),
-          columnId: newColumn.id,
-          value: null,
-        };
-        return {
-          ...row,
-          cells: [...row.cells, newCell],
-        };
-      });
-      
-      return {
-        ...prevData,
-        columns: updatedColumns,
-        rows: updatedRows,
-      };
-    });
+    setSheetData(prevData => columnOps.addColumn(prevData, column));
   };
 
   const updateColumn = (columnId: string, updatedColumn: Partial<CellDefinition>) => {
-    setSheetData((prevData) => ({
-      ...prevData,
-      columns: prevData.columns.map((column) =>
-        column.id === columnId ? { ...column, ...updatedColumn } : column
-      ),
-    }));
+    setSheetData(prevData => columnOps.updateColumn(prevData, columnId, updatedColumn));
   };
 
   const deleteColumn = (columnId: string) => {
-    setSheetData((prevData) => {
-      const updatedColumns = prevData.columns.filter((column) => column.id !== columnId);
-      
-      const updatedRows = prevData.rows.map((row) => ({
-        ...row,
-        cells: row.cells.filter((cell) => cell.columnId !== columnId),
-      }));
-      
-      return {
-        ...prevData,
-        columns: updatedColumns,
-        rows: updatedRows,
-      };
-    });
+    setSheetData(prevData => columnOps.deleteColumn(prevData, columnId));
   };
 
   const moveColumn = (columnId: string, targetIndex: number) => {
-    setSheetData((prevData) => {
-      const columns = [...prevData.columns];
-      const columnIndex = columns.findIndex((column) => column.id === columnId);
-      const [removedColumn] = columns.splice(columnIndex, 1);
-      columns.splice(targetIndex, 0, removedColumn);
-      
-      return {
-        ...prevData,
-        columns,
-      };
-    });
+    setSheetData(prevData => columnOps.moveColumn(prevData, columnId, targetIndex));
   };
 
+  // Revision operations
   const createRevision = (description: string) => {
-    const newRevision: SheetRevision = {
-      id: Math.random().toString(36).substring(2, 15),
-      timestamp: new Date(),
-      description,
-      rows: JSON.parse(JSON.stringify(sheetData.rows)),
-    };
-    
-    setSheetData((prevData) => ({
-      ...prevData,
-      revisions: [...prevData.revisions, newRevision],
-      currentRevision: prevData.revisions.length,
-    }));
+    setSheetData(prevData => revisionOps.createRevision(prevData, description));
   };
 
   const saveRevision = createRevision;
 
   const loadRevision = (revisionIndex: number) => {
-    setSheetData((prevData) => {
-      if (revisionIndex < 0 || revisionIndex >= prevData.revisions.length) {
-        return prevData;
-      }
-      
-      return {
-        ...prevData,
-        rows: JSON.parse(JSON.stringify(prevData.revisions[revisionIndex].rows)),
-        currentRevision: revisionIndex,
-      };
-    });
+    setSheetData(prevData => revisionOps.loadRevision(prevData, revisionIndex));
   };
 
-  const toggleGroupExpanded = (groupId: string) => {
-    setSheetData((prevData) => ({
-      ...prevData,
-      rows: prevData.rows.map((row) =>
-        row.id === groupId && row.isGroup
-          ? { ...row, expanded: !row.expanded }
-          : row
-      ),
-    }));
-  };
-
+  // Aliases for compatibility
   const toggleGroup = toggleGroupExpanded;
-
-  const addRowAfter = (rowId: string) => {
-    setSheetData((prevData) => {
-      const rows = [...prevData.rows];
-      const rowIndex = rows.findIndex((row) => row.id === rowId);
-      
-      if (rowIndex === -1) return prevData;
-      
-      const referenceRow = rows[rowIndex];
-      const newRowOrder = referenceRow.order + 1;
-      
-      const updatedRows = rows.map(row => 
-        row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
-      );
-      
-      const newCells = prevData.columns.map(column => ({
-        id: Math.random().toString(36).substring(2, 15),
-        columnId: column.id,
-        value: null
-      }));
-      
-      const newRow: SheetRow = {
-        id: Math.random().toString(36).substring(2, 15),
-        cells: newCells,
-        parentId: referenceRow.parentId,
-        order: newRowOrder
-      };
-      
-      return {
-        ...prevData,
-        rows: [...updatedRows, newRow]
-      };
-    });
-  };
-
-  const addRowBefore = (rowId: string) => {
-    setSheetData((prevData) => {
-      const rows = [...prevData.rows];
-      const rowIndex = rows.findIndex((row) => row.id === rowId);
-      
-      if (rowIndex === -1) return prevData;
-      
-      const referenceRow = rows[rowIndex];
-      const newRowOrder = referenceRow.order;
-      
-      const updatedRows = rows.map(row => 
-        row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
-      );
-      
-      const newCells = prevData.columns.map(column => ({
-        id: Math.random().toString(36).substring(2, 15),
-        columnId: column.id,
-        value: null
-      }));
-      
-      const newRow: SheetRow = {
-        id: Math.random().toString(36).substring(2, 15),
-        cells: newCells,
-        parentId: referenceRow.parentId,
-        order: newRowOrder
-      };
-      
-      return {
-        ...prevData,
-        rows: [...updatedRows, newRow]
-      };
-    });
-  };
-
-  const createGroup = (name: string, rowIds: string[]) => {
-    setSheetData((prevData) => {
-      const rows = [...prevData.rows];
-      
-      const selectedRows = rows.filter(row => rowIds.includes(row.id));
-      if (selectedRows.length === 0) return prevData;
-      
-      const minOrder = Math.min(...selectedRows.map(row => row.order));
-      
-      const updatedRows = rows.map(row => 
-        row.order >= minOrder ? { ...row, order: row.order + 1 } : row
-      );
-      
-      const groupCell: Cell = {
-        id: Math.random().toString(36).substring(2, 15),
-        columnId: '',
-        value: name
-      };
-      
-      const groupId = Math.random().toString(36).substring(2, 15);
-      const groupRow: SheetRow = {
-        id: groupId,
-        cells: [groupCell],
-        isGroup: true,
-        groupName: name,
-        expanded: true,
-        order: minOrder
-      };
-      
-      const rowsWithParents = updatedRows.map(row => 
-        rowIds.includes(row.id) 
-          ? { ...row, parentId: groupId }
-          : row
-      );
-      
-      return {
-        ...prevData,
-        rows: [...rowsWithParents, groupRow]
-      };
-    });
-  };
 
   const value = {
     sheetData,
@@ -368,12 +123,11 @@ export function SheetProvider({
     createRevision,
     loadRevision,
     toggleGroupExpanded,
-    
+    createGroup,
     saveRevision,
     toggleGroup,
     addRowAfter,
-    addRowBefore,
-    createGroup
+    addRowBefore
   };
 
   return <SheetContext.Provider value={value}>{children}</SheetContext.Provider>;
