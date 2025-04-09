@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { SheetData } from "@/types/sheet";
+import { SheetData, SheetRow, CellDefinition } from "@/types/sheet";
 import { saveSheetData } from "@/services/projectService";
 import { SheetContextType, SheetProviderProps } from "./sheet/types";
 import { createEmptySheet } from "@/data/defaultTemplates";

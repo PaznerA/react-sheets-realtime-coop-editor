@@ -123,6 +123,7 @@ const Cell: React.FC<CellProps> = ({
                   selected={value ? new Date(value.toString()) : undefined}
                   onSelect={handleDateSelect}
                   locale={cs}
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -147,7 +148,7 @@ const Cell: React.FC<CellProps> = ({
                   <CommandInput placeholder="Hledat..." />
                   <CommandEmpty>Žádné možnosti.</CommandEmpty>
                   <CommandGroup>
-                    {column.options?.map((option) => (
+                    {Array.isArray(column.options) && column.options.map((option) => (
                       <CommandItem
                         key={option}
                         value={option}
@@ -189,7 +190,7 @@ const Cell: React.FC<CellProps> = ({
                   <CommandInput placeholder="Hledat..." />
                   <CommandEmpty>Žádné možnosti.</CommandEmpty>
                   <CommandGroup>
-                    {column.options?.map((option) => (
+                    {Array.isArray(column.options) && column.options.map((option) => (
                       <CommandItem
                         key={option}
                         value={option}
