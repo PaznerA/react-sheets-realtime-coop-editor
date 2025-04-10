@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -102,8 +101,8 @@ const SheetEditor: React.FC = () => {
   return (
     <div className="flex flex-col h-full border rounded-md shadow-soft overflow-hidden">
       {/* Toolbar */}
-      <div className="p-2 border-b flex items-center justify-between bg-sheet-header">
-        <div className="flex items-center gap-2">
+      <div className="p-2 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between bg-sheet-header gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
             variant="outline" 
             size="sm" 
@@ -111,10 +110,11 @@ const SheetEditor: React.FC = () => {
             className="flex items-center gap-1 bg-white"
           >
             <PlusCircle className="h-4 w-4" />
-            Přidat řádek
+            <span className="hidden sm:inline">Přidat řádek</span>
+            <span className="sm:hidden">Řádek</span>
           </Button>
           
-          <Separator orientation="vertical" className="h-8" />
+          <Separator orientation="vertical" className="h-8 hidden sm:block" />
           
           <GroupDialog 
             onSelectForGroup={handleSelectForGroup}
@@ -122,7 +122,7 @@ const SheetEditor: React.FC = () => {
             clearSelection={clearSelection}
           />
 
-          <Separator orientation="vertical" className="h-8" />
+          <Separator orientation="vertical" className="h-8 hidden sm:block" />
 
           <RevisionPanel />
         </div>
@@ -130,7 +130,8 @@ const SheetEditor: React.FC = () => {
         <div>
           <Button variant="default" size="sm" className="flex items-center gap-1 bg-primary">
             <Save className="h-4 w-4" />
-            Uložit změny
+            <span className="hidden sm:inline">Uložit změny</span>
+            <span className="sm:hidden">Uložit</span>
           </Button>
         </div>
       </div>
@@ -140,7 +141,7 @@ const SheetEditor: React.FC = () => {
       
       {/* Sheet Content */}
       <div className="flex-1 overflow-auto bg-white">
-        <div className="min-w-max">
+        <div className="min-w-max overflow-x-auto">
           {renderRows()}
         </div>
       </div>
