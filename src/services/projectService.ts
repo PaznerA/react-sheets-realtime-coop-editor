@@ -1,4 +1,3 @@
-
 import { SPACETIME_CONFIG } from "@/config/spaceTimeConfig";
 import { Project } from "@/types/project";
 import { SheetData } from "@/types/sheet";
@@ -6,6 +5,7 @@ import { SheetData } from "@/types/sheet";
 // Local storage keys
 const PROJECTS_KEY = "sheet-editor-projects";
 const SHEETS_KEY = "sheet-editor-sheets";
+const USE_CLOUD_KEY = "sheet-editor-use-cloud";
 
 // Helper to generate unique IDs
 const generateId = (): string => {
@@ -186,6 +186,16 @@ class SpaceTimeClient {
 
 
 export const spaceTimeClient = new SpaceTimeClient();
+
+// Settings for cloud usage
+export const isUsingCloud = (): boolean => {
+  const useCloud = localStorage.getItem(USE_CLOUD_KEY);
+  return useCloud ? JSON.parse(useCloud) : false;
+};
+
+export const setUseCloud = (useCloud: boolean): void => {
+  localStorage.setItem(USE_CLOUD_KEY, JSON.stringify(useCloud));
+};
 
 export const getProjectsFromCloud = () => spaceTimeClient.getProjects();
 export const getProjectFromCloud = (id: string) => spaceTimeClient.getProject(id);
