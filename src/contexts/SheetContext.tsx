@@ -28,10 +28,23 @@ export function SheetProvider({
   const [sheetData, setSheetData] = useState<SheetData>(
     initialData || createEmptySheet()
   );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (sheetId) {
-      saveSheetData(sheetId, sheetData);
+      const saveData = async () => {
+        try {
+          setLoading(true);
+          await saveSheetData(sheetId, sheetData);
+        } catch (err) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      saveData();
     }
   }, [sheetData, sheetId]);
 
@@ -106,6 +119,8 @@ export function SheetProvider({
 
   const value = {
     sheetData,
+    loading,
+    error,
     addRow,
     updateRow,
     deleteRow,

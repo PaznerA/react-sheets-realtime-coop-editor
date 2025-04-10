@@ -1,8 +1,10 @@
-
+// src/contexts/sheet/types.ts
 import { SheetData, SheetRow, CellDefinition, Cell, SheetRevision } from "@/types/sheet";
 
 export interface SheetContextType {
   sheetData: SheetData;
+  loading: boolean;
+  error: Error | null;
   addRow: (row: Omit<SheetRow, "id">) => void;
   updateRow: (rowId: string, updatedRow: Partial<SheetRow>) => void;
   deleteRow: (rowId: string) => void;
