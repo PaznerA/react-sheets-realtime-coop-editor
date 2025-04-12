@@ -1,6 +1,10 @@
 
 name: Deploy to GitHub Pages
 
+env:
+  VITE_SPACETIME_API_KEY: ${{ secrets.SPACETIME_API_KEY }}
+  VITE_SPACETIME_PROJECT_ID: ${{ secrets.SPACETIME_PROJECT_ID }}
+  
 on:
   push:
     branches: [ main ]
