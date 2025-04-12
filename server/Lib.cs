@@ -1,6 +1,9 @@
 using SpacetimeDB;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 public static partial class Module
 {
@@ -9,150 +12,150 @@ public static partial class Module
     // ************************
 
     // User entity
-    [Table(Name = "user", Public = true)]
+    [Table(Name = "User", Public = true)]
     public partial class User
     {
         [PrimaryKey]
-        public string Id;
-        public string Email;
-        public string Name;
+        public string Id = "";
+        public string Email = "";
+        public string Name = "";
         public long CreatedAt;
-        public string PasswordHash; // Hashed, never stored in plain text!
+        public string PasswordHash = ""; // Hashed, never stored in plain text!
         public bool IsActive;
     }
 
     // Unit entity - organizational unit
-    [Table(Name = "unit", Public = true)]
+    [Table(Name = "Unit", Public = true)]
     public partial class Unit
     {
         [PrimaryKey]
-        public string Id;
-        public string Name;
-        public string Description;
+        public string Id = "";
+        public string Name = "";
+        public string Description = "";
         public long CreatedAt;
         public long UpdatedAt;
     }
 
     // UnitMember - join table for Users and Units (many-to-many)
-    [Table(Name = "unit_member", Public = true)]
+    [Table(Name = "UnitMember", Public = true)]
     public partial class UnitMember
     {
         [PrimaryKey]
-        public string Id;
-        public string UnitId;
-        public string UserId;
-        public string Role; // e.g. "admin", "member", "viewer"
+        public string Id = "";
+        public string UnitId = "";
+        public string UserId = "";
+        public string Role = ""; // e.g. "admin", "member", "viewer"
         public long JoinedAt;
     }
     
     // Project entity
-    [Table(Name = "project", Public = true)]
+    [Table(Name = "Project", Public = true)]
     public partial class Project
     {
         [PrimaryKey]
-        public string Id;
-        public string UnitId; // Projects belong to a unit
-        public string Name;
-        public string Description;
+        public string Id = "";
+        public string UnitId = ""; // Projects belong to a unit
+        public string Name = "";
+        public string Description = "";
         public long CreatedAt;
         public long UpdatedAt;
     }
 
     // Sheet entity
-    [Table(Name = "sheet", Public = true)]
+    [Table(Name = "Sheet", Public = true)]
     public partial class Sheet
     {
         [PrimaryKey]
-        public string Id;
-        public string ProjectId; // Sheets belong to a project
-        public string Name;
-        public string Description;
-        public string Type; // e.g. "schedule", "budget", "resources", etc.
+        public string Id = "";
+        public string ProjectId = ""; // Sheets belong to a project
+        public string Name = "";
+        public string Description = "";
+        public string Type = ""; // e.g. "schedule", "budget", "resources", etc.
         public long CreatedAt;
         public long UpdatedAt;
-        public string ColumnsJson; // Store column definitions as JSON
+        public string ColumnsJson = ""; // Store column definitions as JSON
     }
     
     // RowGroup entity - groups of rows in a sheet
-    [Table(Name = "row_group", Public = true)]
+    [Table(Name = "RowGroup", Public = true)]
     public partial class RowGroup
     {
         [PrimaryKey]
-        public string Id;
-        public string SheetId;
-        public string Name;
+        public string Id = "";
+        public string SheetId = "";
+        public string Name = "";
         public int OrderIndex; // For displaying groups in specific order
         public bool IsExpanded; // UI state - is the group expanded or collapsed
     }
     
     // Row entity
-    [Table(Name = "row", Public = true)]
+    [Table(Name = "Row", Public = true)]
     public partial class Row
     {
         [PrimaryKey]
-        public string Id;
-        public string SheetId;
-        public string GroupId; // Optional - can be empty if not in any group
+        public string Id = "";
+        public string SheetId = "";
+        public string GroupId = ""; // Optional - can be empty if not in any group
         public int OrderIndex; // For ordering rows
     }
     
     // Cell entity
-    [Table(Name = "cell", Public = true)]
+    [Table(Name = "Cell", Public = true)]
     public partial class Cell
     {
         [PrimaryKey]
-        public string Id;
-        public string RowId;
-        public string ColumnId; // References a column definition (not a separate entity, defined in Sheet)
-        public string Value;
-        public string Format; // Optional formatting hint
+        public string Id = "";
+        public string RowId = "";
+        public string ColumnId = ""; // References a column definition (not a separate entity, defined in Sheet)
+        public string Value = "";
+        public string Format = ""; // Optional formatting hint
     }
     
     // Enum entity - definitions for dropdown/select fields
-    [Table(Name = "enum", Public = true)]
+    [Table(Name = "Enum", Public = true)]
     public partial class Enum
     {
         [PrimaryKey]
-        public string Id;
-        public string UnitId; // Enums belong to a unit (can be shared across projects)
-        public string Name;
-        public string Description;
+        public string Id = "";
+        public string UnitId = ""; // Enums belong to a unit (can be shared across projects)
+        public string Name = "";
+        public string Description = "";
     }
     
     // EnumItem entity - items within an enum
-    [Table(Name = "enum_item", Public = true)]
+    [Table(Name = "EnumItem", Public = true)]
     public partial class EnumItem
     {
         [PrimaryKey]
-        public string Id;
-        public string EnumId;
-        public string Value;
-        public string Label;
-        public string Color; // Optional - for color coding items
+        public string Id = "";
+        public string EnumId = "";
+        public string Value = "";
+        public string Label = "";
+        public string Color = ""; // Optional - for color coding items
         public int OrderIndex; // For ordering items in the enum
     }
 
     // Savepoint entity - for versioning/time-travel
-    [Table(Name = "savepoint", Public = true)]
+    [Table(Name = "Savepoint", Public = true)]
     public partial class Savepoint
     {
         [PrimaryKey]
-        public string Id;
-        public string SheetId;
+        public string Id = "";
+        public string SheetId = "";
         public long CreatedAt;
-        public string Message;
-        public string CreatedByUserId;
-        public string TimestampAlias; // Optional user-friendly alias for the savepoint
+        public string Message = "";
+        public string CreatedByUserId = "";
+        public string TimestampAlias = ""; // Optional user-friendly alias for the savepoint
     }
     
     // Column definition - used in columnsJson
     public class ColumnDefinition
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string Type { get; set; } // e.g. "text", "number", "date", "enum", etc.
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Type { get; set; } = ""; // e.g. "text", "number", "date", "enum", etc.
         public int Width { get; set; }
-        public string EnumId { get; set; } // Optional - for enum columns
+        public string EnumId { get; set; } = ""; // Optional - for enum columns
         public bool IsReadOnly { get; set; }
         public int OrderIndex { get; set; }
     }
@@ -178,6 +181,21 @@ public static partial class Module
         return System.Guid.NewGuid().ToString();
     }
 
+    // Helper to hash passwords - simple SHA256 implementation for demo
+    private static string HashPassword(string password)
+    {
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                builder.Append(bytes[i].ToString("x2"));
+            }
+            return builder.ToString();
+        }
+    }
+
     // ************************
     // * USER REDUCERS       *
     // ************************
@@ -186,9 +204,9 @@ public static partial class Module
     public static void CreateUser(ReducerContext ctx, string email, string name, string password)
     {
         // Check if user already exists
-        foreach (var user in ctx.Db.User.Iter())
+        foreach (var existingUser in ctx.Db.User.Iter())
         {
-            if (user.Email.ToLower() == email.ToLower())
+            if (existingUser.Email.ToLower() == email.ToLower())
             {
                 Log.Error($"User with email {email} already exists");
                 return;
@@ -196,9 +214,9 @@ public static partial class Module
         }
         
         var id = GenerateId();
-        var passwordHash = BCryptNet.HashPassword(password);
+        var passwordHash = HashPassword(password);
         
-        var user = new User
+        var newUser = new User
         {
             Id = id,
             Email = email,
@@ -208,7 +226,7 @@ public static partial class Module
             IsActive = true
         };
         
-        ctx.Db.User.Insert(user);
+        ctx.Db.User.Insert(newUser);
         Log.Info($"Created user {name} with ID {id}");
     }
 
@@ -251,14 +269,14 @@ public static partial class Module
     public static void AddUserToUnit(ReducerContext ctx, string unitId, string userId, string role)
     {
         // Check if the unit and user exist
-        var unit = ctx.Db.Unit.FindById(unitId);
+        var unit = ctx.Db.Unit.Iter().FirstOrDefault(u => u.Id == unitId);
         if (unit == null)
         {
             Log.Error($"Unit not found with ID {unitId}");
             return;
         }
         
-        var user = ctx.Db.User.FindById(userId);
+        var user = ctx.Db.User.Iter().FirstOrDefault(u => u.Id == userId);
         if (user == null)
         {
             Log.Error($"User not found with ID {userId}");
@@ -315,13 +333,17 @@ public static partial class Module
     [Reducer]
     public static void UpdateProject(ReducerContext ctx, string id, string name, string description)
     {
-        var project = ctx.Db.Project.FindById(id);
+        var project = ctx.Db.Project.Iter().FirstOrDefault(p => p.Id == id);
         if (project == null)
         {
             Log.Error($"Project not found with ID {id}");
             return;
         }
         
+        // Remove the old project
+        ctx.Db.Project.Delete(project);
+        
+        // Insert the updated project
         var updatedProject = new Project
         {
             Id = id,
@@ -332,14 +354,14 @@ public static partial class Module
             UpdatedAt = ToTimestamp(System.DateTime.UtcNow)
         };
         
-        ctx.Db.Project.Update(id, updatedProject);
+        ctx.Db.Project.Insert(updatedProject);
         Log.Info($"Updated project {name} with ID {id}");
     }
     
     [Reducer]
     public static void DeleteProject(ReducerContext ctx, string id)
     {
-        var project = ctx.Db.Project.FindById(id);
+        var project = ctx.Db.Project.Iter().FirstOrDefault(p => p.Id == id);
         if (project == null)
         {
             Log.Error($"Project not found with ID {id}");
@@ -347,21 +369,23 @@ public static partial class Module
         }
         
         // First delete all sheets that belong to this project
-        var sheetsToDelete = new List<string>();
+        var sheetsToDelete = new List<Sheet>();
         foreach (var sheet in ctx.Db.Sheet.Iter())
         {
             if (sheet.ProjectId == id)
             {
-                sheetsToDelete.Add(sheet.Id);
+                sheetsToDelete.Add(sheet);
             }
         }
         
-        foreach (var sheetId in sheetsToDelete)
+        // Now that we collected all sheets to delete, delete them
+        foreach (var sheet in sheetsToDelete)
         {
-            DeleteSheet(ctx, sheetId);
+            ctx.Db.Sheet.Delete(sheet);
         }
         
-        ctx.Db.Project.DeleteById(id);
+        // Now delete the project
+        ctx.Db.Project.Delete(project);
         Log.Info($"Deleted project with ID {id} and all its sheets");
     }
 
@@ -392,83 +416,111 @@ public static partial class Module
     }
     
     [Reducer]
-    public static void DeleteSheet(ReducerContext ctx, string id)
+    public static void UpdateSheet(ReducerContext ctx, string id, string name, string description, string type, string columnsJson)
     {
-        var sheet = ctx.Db.Sheet.FindById(id);
+        var sheet = ctx.Db.Sheet.Iter().FirstOrDefault(s => s.Id == id);
         if (sheet == null)
         {
             Log.Error($"Sheet not found with ID {id}");
             return;
         }
         
-        // Delete all rows, row groups, and cells associated with this sheet
-        var rowsToDelete = new List<string>();
+        // Remove the old sheet
+        ctx.Db.Sheet.Delete(sheet);
+        
+        // Create the updated sheet
+        var updatedSheet = new Sheet
+        {
+            Id = id,
+            ProjectId = sheet.ProjectId,
+            Name = name,
+            Description = description,
+            Type = type,
+            CreatedAt = sheet.CreatedAt,
+            UpdatedAt = ToTimestamp(System.DateTime.UtcNow),
+            ColumnsJson = columnsJson
+        };
+        
+        ctx.Db.Sheet.Insert(updatedSheet);
+        Log.Info($"Updated sheet {name} with ID {id}");
+    }
+    
+    [Reducer]
+    public static void DeleteSheet(ReducerContext ctx, string id)
+    {
+        var sheet = ctx.Db.Sheet.Iter().FirstOrDefault(s => s.Id == id);
+        if (sheet == null)
+        {
+            Log.Error($"Sheet not found with ID {id}");
+            return;
+        }
+        
+        // First delete all rows, cells, and savepoints
+        var rowsToDelete = new List<Row>();
         foreach (var row in ctx.Db.Row.Iter())
         {
             if (row.SheetId == id)
             {
-                rowsToDelete.Add(row.Id);
+                rowsToDelete.Add(row);
             }
         }
         
-        foreach (var rowId in rowsToDelete)
+        // Delete all cells from these rows
+        foreach (var row in rowsToDelete)
         {
-            // Delete all cells in this row
-            var cellsToDelete = new List<string>();
+            var cellsToDelete = new List<Cell>();
             foreach (var cell in ctx.Db.Cell.Iter())
             {
-                if (cell.RowId == rowId)
+                if (cell.RowId == row.Id)
                 {
-                    cellsToDelete.Add(cell.Id);
+                    cellsToDelete.Add(cell);
                 }
             }
             
-            foreach (var cellId in cellsToDelete)
+            foreach (var cell in cellsToDelete)
             {
-                ctx.Db.Cell.DeleteById(cellId);
+                ctx.Db.Cell.Delete(cell);
             }
             
-            ctx.Db.Row.DeleteById(rowId);
+            // Delete the row
+            ctx.Db.Row.Delete(row);
         }
         
         // Delete all row groups
-        var groupsToDelete = new List<string>();
-        foreach (var group in ctx.Db.RowGroup.Iter())
+        var rowGroupsToDelete = new List<RowGroup>();
+        foreach (var rowGroup in ctx.Db.RowGroup.Iter())
         {
-            if (group.SheetId == id)
+            if (rowGroup.SheetId == id)
             {
-                groupsToDelete.Add(group.Id);
+                rowGroupsToDelete.Add(rowGroup);
             }
         }
         
-        foreach (var groupId in groupsToDelete)
+        foreach (var rowGroup in rowGroupsToDelete)
         {
-            ctx.Db.RowGroup.DeleteById(groupId);
+            ctx.Db.RowGroup.Delete(rowGroup);
         }
         
         // Delete all savepoints
-        var savepointsToDelete = new List<string>();
+        var savepointsToDelete = new List<Savepoint>();
         foreach (var savepoint in ctx.Db.Savepoint.Iter())
         {
             if (savepoint.SheetId == id)
             {
-                savepointsToDelete.Add(savepoint.Id);
+                savepointsToDelete.Add(savepoint);
             }
         }
         
-        foreach (var savepointId in savepointsToDelete)
+        foreach (var savepoint in savepointsToDelete)
         {
-            ctx.Db.Savepoint.DeleteById(savepointId);
+            ctx.Db.Savepoint.Delete(savepoint);
         }
         
-        ctx.Db.Sheet.DeleteById(id);
-        Log.Info($"Deleted sheet with ID {id} and all its rows, groups, and cells");
+        // Now delete the sheet
+        ctx.Db.Sheet.Delete(sheet);
+        Log.Info($"Deleted sheet with ID {id} and all related rows, cells, and savepoints");
     }
     
-    // ************************
-    // * ROW REDUCERS        *
-    // ************************
-
     [Reducer]
     public static void CreateRow(ReducerContext ctx, string sheetId, string groupId, int orderIndex)
     {
@@ -493,40 +545,32 @@ public static partial class Module
     [Reducer]
     public static void UpdateCell(ReducerContext ctx, string rowId, string columnId, string value, string format)
     {
-        // Check if cell already exists
-        var existingCellId = "";
+        // Find existing cell or create new
+        var existingCell = ctx.Db.Cell.Iter().FirstOrDefault(c => c.RowId == rowId && c.ColumnId == columnId);
         
-        foreach (var cell in ctx.Db.Cell.Iter())
+        if (existingCell != null)
         {
-            if (cell.RowId == rowId && cell.ColumnId == columnId)
-            {
-                existingCellId = cell.Id;
-                break;
-            }
-        }
-        
-        if (!string.IsNullOrEmpty(existingCellId))
-        {
-            // Update existing cell
+            // Remove old cell
+            ctx.Db.Cell.Delete(existingCell);
+            
+            // Insert updated cell
             var updatedCell = new Cell
             {
-                Id = existingCellId,
+                Id = existingCell.Id,
                 RowId = rowId,
                 ColumnId = columnId,
                 Value = value,
                 Format = format
             };
             
-            ctx.Db.Cell.Update(existingCellId, updatedCell);
-            Log.Info($"Updated cell {existingCellId} in row {rowId}, column {columnId}");
+            ctx.Db.Cell.Insert(updatedCell);
         }
         else
         {
             // Create new cell
-            var newCellId = GenerateId();
             var newCell = new Cell
             {
-                Id = newCellId,
+                Id = GenerateId(),
                 RowId = rowId,
                 ColumnId = columnId,
                 Value = value,
@@ -534,8 +578,9 @@ public static partial class Module
             };
             
             ctx.Db.Cell.Insert(newCell);
-            Log.Info($"Created cell {newCellId} in row {rowId}, column {columnId}");
         }
+        
+        Log.Info($"Updated/created cell for row {rowId}, column {columnId}");
     }
 
     // ************************
@@ -600,5 +645,35 @@ public static partial class Module
         
         ctx.Db.EnumItem.Insert(enumItem);
         Log.Info($"Added item {label} to enum {enumId}");
+    }
+
+    [Reducer]
+    public static void DeleteEnum(ReducerContext ctx, string id)
+    {
+        var enumObj = ctx.Db.Enum.Iter().FirstOrDefault(e => e.Id == id);
+        if (enumObj == null)
+        {
+            Log.Error($"Enum not found with ID {id}");
+            return;
+        }
+
+        // First delete all enum items
+        var enumItemsToDelete = new List<EnumItem>();
+        foreach (var enumItem in ctx.Db.EnumItem.Iter())
+        {
+            if (enumItem.EnumId == id)
+            {
+                enumItemsToDelete.Add(enumItem);
+            }
+        }
+
+        foreach (var enumItem in enumItemsToDelete)
+        {
+            ctx.Db.EnumItem.Delete(enumItem);
+        }
+
+        // Now delete the enum
+        ctx.Db.Enum.Delete(enumObj);
+        Log.Info($"Deleted enum with ID {id} and all its items");
     }
 }
