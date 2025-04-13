@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { cs } from 'date-fns/locale';
@@ -33,13 +34,20 @@ interface Savepoint {
 }
 
 const RevisionPanel: React.FC = () => {
-  const { sheetData, refreshSheet } = useSheet();
+  const { sheetData, refreshSheet, saveRevision, loadRevision } = useSheet();
   const client = useSpacetime();
   const [description, setDescription] = useState('');
   const [open, setOpen] = useState(false);
   const [savepoints, setSavepoints] = useState<Savepoint[]>([]);
   const [currentSavepointId, setCurrentSavepointId] = useState<string>('');
   const [loading, setLoading] = useState(false);
+
+  // Initialize revisions if they don't exist
+  useEffect(() => {
+    if (sheetData && !sheetData.revisions) {
+      saveRevision('Initial state');
+    }
+  }, [sheetData]);
 
   // Načíst savepoints při otevření
   useEffect(() => {
@@ -53,9 +61,30 @@ const RevisionPanel: React.FC = () => {
     
     try {
       setLoading(true);
-      const result = await client.getSavepoints(sheetData.id);
-      setSavepoints(result.savepoints);
-      setCurrentSavepointId(result.currentSavepointId);
+      
+      if (client) {
+        const result = await client.getSavepoints(sheetData.id);
+        setSavepoints(result.savepoints);
+        setCurrentSavepointId(result.currentSavepointId);
+      } else {
+        // Fallback to local revisions if SpacetimeDB is not available
+        const revisions = sheetData.revisions || [];
+        const localSavepoints = revisions.map((rev, index) => ({
+          id: rev.id,
+          sheetId: sheetData.id,
+          createdAt: rev.timestamp.getTime(),
+          message: rev.description,
+          createdByUserId: 'local-user',
+          timestampAlias: `v${index + 1}`,
+        }));
+        
+        setSavepoints(localSavepoints);
+        setCurrentSavepointId(
+          sheetData.currentRevision !== undefined && revisions[sheetData.currentRevision] 
+            ? revisions[sheetData.currentRevision].id 
+            : ''
+        );
+      }
     } catch (error) {
       console.error('Failed to load savepoints:', error);
       toast({
@@ -74,13 +103,20 @@ const RevisionPanel: React.FC = () => {
     if (description.trim()) {
       try {
         setLoading(true);
-        const savepointId = await client.createSavepoint(
-          sheetData.id, 
-          description
-        );
         
-        // Aktualizovat seznam savepointů
-        await loadSavepoints();
+        if (client) {
+          const savepointId = await client.createSavepoint(
+            sheetData.id, 
+            description
+          );
+          
+          // Aktualizovat seznam savepointů
+          await loadSavepoints();
+        } else {
+          // Lokální uložení revize
+          saveRevision(description);
+          await loadSavepoints();
+        }
         
         setDescription('');
         toast({
@@ -109,19 +145,34 @@ const RevisionPanel: React.FC = () => {
   const handleLoadRevision = async (savepointId: string) => {
     try {
       setLoading(true);
-      const success = await client.revertToSavepoint(savepointId);
       
-      if (success) {
-        // Sheet data byla aktualizována v databázi, potřebujeme je refreshnout
-        await refreshSheet();
-        setOpen(false);
+      if (client) {
+        const success = await client.revertToSavepoint(savepointId);
         
-        toast({
-          title: "Úspěch",
-          description: "Revize byla načtena",
-        });
+        if (success) {
+          // Sheet data byla aktualizována v databázi, potřebujeme je refreshnout
+          await refreshSheet();
+          setOpen(false);
+          
+          toast({
+            title: "Úspěch",
+            description: "Revize byla načtena",
+          });
+        } else {
+          throw new Error('Failed to revert to savepoint');
+        }
       } else {
-        throw new Error('Failed to revert to savepoint');
+        // Lokální načtení revize
+        const revisionIndex = savepoints.findIndex(sp => sp.id === savepointId);
+        if (revisionIndex !== -1) {
+          loadRevision(revisionIndex);
+          setOpen(false);
+          
+          toast({
+            title: "Úspěch",
+            description: "Revize byla načtena",
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to load revision:', error);

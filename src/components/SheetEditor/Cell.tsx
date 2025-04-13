@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
-import { Cell as CellType, CellDefinition } from '@/types/sheet';
+import React from 'react';
+import { Cell as CellType, ColumnDefinition } from '@/types/sheet';
 import CellEditor from './CellEditor/CellEditor';
 
 interface CellProps {
   cell: CellType;
-  column: CellDefinition;
+  column: ColumnDefinition;
   isEditing: boolean;
   onStartEdit: () => void;
   onFinishEdit: (value: string | number | string[] | null) => void;

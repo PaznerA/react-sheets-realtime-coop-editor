@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,12 +15,23 @@ import NotFound from "./pages/NotFound";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { EnumProvider } from "./contexts/EnumContext";
 import { SpacetimeProvider } from "./module_bindings/client";
+import { SPACETIME_CONFIG } from "./config/spaceTimeConfig";
 
 const queryClient = new QueryClient();
 
+// Konfigurace pro SpacetimeDB
+const spacetimeConfig = {
+  host: SPACETIME_CONFIG.HOST || "localhost",
+  port: SPACETIME_CONFIG.PORT || 8080,
+  namespace: SPACETIME_CONFIG.MODULE_NAME || "spacetime-sheets"
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <SpacetimeProvider>
+    <SpacetimeProvider
+      host={`http://${spacetimeConfig.host}:${spacetimeConfig.port}`}
+      namespace={spacetimeConfig.namespace}
+    >
       <TooltipProvider>
         <EnumProvider>
           <Toaster />

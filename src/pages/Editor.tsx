@@ -6,7 +6,7 @@ import SheetEditor from "@/components/SheetEditor/SheetEditor";
 import { getProject, getSheetData, saveSheetData } from "@/services/projectService";
 import { SheetData } from "@/types/sheet";
 import { toast } from "@/components/ui/use-toast";
-import { createEmptySheet } from "@/data/defaultTemplates";
+import { createEmptySheet } from "@/data/sheetTemplates";
 
 const Editor = () => {
   const { projectId } = useParams<{ projectId: string }>();

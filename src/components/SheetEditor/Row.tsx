@@ -49,11 +49,8 @@ const Row: React.FC<RowProps> = ({
   };
 
   const isGroup = !!row.isGroup;
-  // Objekt cells je { [columnId: string]: Cell }, takže nemůžeme použít find()
-  // Musíme místo toho hledat položku bez columnId (nebo s prázdným columnId)
   const groupCell = Object.values(row.cells || {}).find(cell => !(cell as CellType).columnId) as CellType | undefined;
   
-  // Indentation for hierarchical display
   const indentPadding = level * 20;
 
   if (!isVisible) {
@@ -70,7 +67,6 @@ const Row: React.FC<RowProps> = ({
         isSelected ? 'bg-sheet-selected' : ''
       } border-b border-sheet-border transition-colors`}
     >
-      {/* Row controls */}
       <div 
         className={`min-w-[40px] w-10 shrink-0 flex items-center justify-center border-r border-sheet-border`}
       >
@@ -127,15 +123,12 @@ const Row: React.FC<RowProps> = ({
         )}
       </div>
 
-      {/* Cells */}
       <div className={`flex-1 grid overflow-x-auto`} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
         {columns.map((column, index) => {
-          // For group rows, only show the name in the first column
           if (isGroup && index > 0) {
             return <div key={column.id} className="border-r border-sheet-border"></div>;
           }
 
-          // Find cell for this column
           const cell = row.cells[column.id] || 
                        (isGroup && index === 0 && groupCell) || 
                        { id: `empty_${row.id}_${column.id}`, columnId: column.id, value: null };

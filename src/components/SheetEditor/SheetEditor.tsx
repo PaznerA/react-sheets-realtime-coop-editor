@@ -8,7 +8,7 @@ import Row from './Row';
 import RevisionPanel from './RevisionPanel';
 import GroupDialog from './GroupDialog';
 import { toast } from 'sonner';
-import { SheetRow } from '@/types/sheet';
+import { Row as RowType } from '@/types/sheet';
 
 const SheetEditor: React.FC = () => {
   const { sheetData, addRowAfter, addRow } = useSheet();
@@ -30,7 +30,7 @@ const SheetEditor: React.FC = () => {
   // Create row hierarchy for display
   const renderRows = () => {
     // First, sort rows by order
-    const sortedRows = [...sheetData.rows].sort((a, b) => a.order - b.order);
+    const sortedRows = [...sheetData.rows].sort((a, b) => a.orderIndex - b.orderIndex);
     
     // Keep track of parent group visibility
     const groupVisibility: Record<string, boolean> = {};
@@ -74,23 +74,28 @@ const SheetEditor: React.FC = () => {
     if (sheetData.rows.length > 0) {
       // Get the last row to add after it
       const lastRow = [...sheetData.rows]
-        .sort((a, b) => a.order - b.order)
+        .sort((a, b) => a.orderIndex - b.orderIndex)
         .slice(-1)[0];
       
       addRowAfter(lastRow.id);
       toast.success('Nový řádek byl přidán.');
     } else {
       // No existing rows, create first row with cells for each column
-      const newCells = sheetData.columns.map(column => ({
-        id: Math.random().toString(36).substring(2, 15),
-        columnId: column.id,
-        value: null
-      }));
+      const cells: { [columnId: string]: any } = {};
       
-      // Add first row with order 0
-      const newRow: Omit<SheetRow, "id"> = {
-        cells: newCells,
-        order: 0
+      sheetData.columns.forEach(column => {
+        cells[column.id] = {
+          id: Math.random().toString(36).substring(2, 15),
+          columnId: column.id,
+          value: null
+        };
+      });
+      
+      // Add first row with orderIndex 0
+      const newRow: Omit<RowType, "id"> = {
+        sheetId: sheetData.id,
+        cells,
+        orderIndex: 0
       };
       
       addRow(newRow);
