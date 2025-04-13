@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { CellDefinition } from '@/types/sheet';
+import { ColumnDefinition } from '@/types/sheet';
 import { useEnums } from '@/contexts/EnumContext';
 
 interface SheetHeaderProps {
-  columns: CellDefinition[];
+  columns: ColumnDefinition[];
 }
 
 const SheetHeader: React.FC<SheetHeaderProps> = ({ columns }) => {
@@ -33,7 +33,7 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ columns }) => {
             <div key={column.id} className="px-2 py-2 border-r border-sheet-border whitespace-nowrap">
               <div className="flex items-center">
                 <span className="truncate">{column.name}</span>
-                {column.required && <span className="text-red-500 ml-1">*</span>}
+                {column.isReadOnly && <span className="text-blue-500 ml-1">🔒</span>}
               </div>
               <div className="text-xs text-gray-500 truncate">
                 {typeInfo} {enumInfo}

@@ -10,11 +10,17 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
+import { EnumValueId } from '@/types/enum';
+
+interface EnumOption {
+  id: string;
+  value: string;
+}
 
 interface SelectInputProps {
-  value: string | null;
-  options: string[];
-  onValueChange: (value: string) => void;
+  value: EnumValueId | null;
+  options: EnumOption[];
+  onValueChange: (value: EnumValueId) => void;
 }
 
 const SelectInput: React.FC<SelectInputProps> = ({ 
@@ -27,13 +33,20 @@ const SelectInput: React.FC<SelectInputProps> = ({
   // Safety check to ensure options is always an array
   const safeOptions = Array.isArray(options) ? options : [];
   
-  const handleSelectOption = (selectedValue: string) => {
-    onValueChange(selectedValue);
+  const handleSelectOption = (selectedId: string) => {
+    onValueChange(selectedId);
     setOpen(false);
   };
 
-  // Display the current value or a placeholder
-  const displayValue = value || "Vyberte možnost";
+  // Find the display value for the current selected option
+  const getDisplayValue = () => {
+    if (!value) return "Vyberte možnost";
+    
+    const selectedOption = safeOptions.find(opt => opt.id === value);
+    return selectedOption ? selectedOption.value : "Vyberte možnost";
+  };
+
+  const displayValue = getDisplayValue();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -49,7 +62,7 @@ const SelectInput: React.FC<SelectInputProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0" align="start">
-        {/* Only render Command when the popover is open to prevent Array.from errors */}
+        {/* Only render Command when the popover is open */}
         {open && (
           <Command>
             <CommandInput placeholder="Hledat..." />
@@ -57,16 +70,16 @@ const SelectInput: React.FC<SelectInputProps> = ({
             <CommandGroup>
               {safeOptions.map((option) => (
                 <CommandItem
-                  key={option}
-                  value={option}
-                  onSelect={() => handleSelectOption(option)}
+                  key={option.id}
+                  value={option.value} // Use value for searching
+                  onSelect={() => handleSelectOption(option.id)}
                 >
                   <Check
                     className={`mr-2 h-4 w-4 ${
-                      value === option ? "opacity-100" : "opacity-0"
+                      value === option.id ? "opacity-100" : "opacity-0"
                     }`}
                   />
-                  {option}
+                  {option.value}
                 </CommandItem>
               ))}
             </CommandGroup>

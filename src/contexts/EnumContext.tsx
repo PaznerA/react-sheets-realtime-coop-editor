@@ -2,21 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Enum, EnumValue, EnumsState } from '@/types/enum';
-
-// Default NullableBool enum
-const defaultEnums: Enum[] = [
-  {
-    id: 'nullable-bool',
-    name: 'NullableBool',
-    values: [
-      { id: uuidv4(), value: 'yes', order: 0 },
-      { id: uuidv4(), value: 'no', order: 1 },
-      { id: uuidv4(), value: 'not-set', order: 2 },
-    ],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import { getSampleEnums } from '@/data/sampleData';
 
 interface EnumContextType {
   enums: Enum[];
@@ -62,7 +48,7 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     // Default to initial state if nothing is saved
-    return { enums: defaultEnums };
+    return { enums: getSampleEnums() };
   });
 
   // Save to localStorage whenever state changes
@@ -70,15 +56,18 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
+  // Get enum by ID
   const getEnum = (id: string) => {
     return state.enums.find(e => e.id === id);
   };
 
+  // Get enum values by enum ID
   const getEnumValues = (enumId: string) => {
     const foundEnum = getEnum(enumId);
     return foundEnum ? foundEnum.values : [];
   };
 
+  // Add new enum
   const addEnum = (name: string) => {
     const newEnum: Enum = {
       id: uuidv4(),
@@ -93,6 +82,7 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
+  // Update enum name
   const updateEnum = (id: string, name: string) => {
     setState(prev => ({
       ...prev,
@@ -104,9 +94,16 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
+  // Delete enum
   const deleteEnum = (id: string) => {
-    // Prevent deletion of NullableBool
-    if (id === 'nullable-bool') return;
+    // Prevent deletion of built-in enums
+    if (id === 'nullable-bool' || 
+        id === 'enum-priority' || 
+        id === 'enum-status' || 
+        id === 'enum-requirement-type' || 
+        id === 'enum-test-status') {
+      return;
+    }
     
     setState(prev => ({
       ...prev,
@@ -114,6 +111,7 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
+  // Add new enum value
   const addEnumValue = (enumId: string, value: string) => {
     setState(prev => ({
       ...prev,
@@ -134,6 +132,7 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
+  // Update enum value
   const updateEnumValue = (enumId: string, valueId: string, newValue: string) => {
     setState(prev => ({
       ...prev,
@@ -152,6 +151,7 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
+  // Delete enum value
   const deleteEnumValue = (enumId: string, valueId: string) => {
     setState(prev => ({
       ...prev,
@@ -168,6 +168,7 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
+  // Reorder enum value
   const reorderEnumValue = (enumId: string, valueId: string, newOrder: number) => {
     setState(prev => ({
       ...prev,
