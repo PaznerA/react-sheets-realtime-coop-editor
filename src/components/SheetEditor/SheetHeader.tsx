@@ -20,10 +20,12 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ columns }) => {
         {columns.map((column) => {
           // Get enum name if the column is linked to an enum
           let typeInfo = column.type;
+          let enumInfo = '';
+          
           if (column.enumId && (column.type === 'select' || column.type === 'multiselect')) {
             const enumData = getEnum(column.enumId);
             if (enumData) {
-              typeInfo = `${column.type} (${enumData.name})`;
+              enumInfo = `(${enumData.name})`;
             }
           }
           
@@ -33,7 +35,9 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ columns }) => {
                 <span className="truncate">{column.name}</span>
                 {column.required && <span className="text-red-500 ml-1">*</span>}
               </div>
-              <div className="text-xs text-gray-500 truncate">{typeInfo}</div>
+              <div className="text-xs text-gray-500 truncate">
+                {typeInfo} {enumInfo}
+              </div>
             </div>
           );
         })}
