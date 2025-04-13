@@ -18,11 +18,10 @@ interface MultiSelectInputProps {
 }
 
 const MultiSelectInput: React.FC<MultiSelectInputProps> = ({ 
-  value = [], // Default to empty array if value is undefined
-  options = [], // Default to empty array if options is undefined
+  value = [], 
+  options = [], 
   onValueChange 
 }) => {
-  // Start with open=false to prevent initial render errors with empty options
   const [open, setOpen] = useState(false);
   
   // Safety check to ensure options and value are always arrays
@@ -36,6 +35,13 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
     onValueChange(newValues);
   };
 
+  // Format the display value for the button
+  const displayValue = safeValue.length > 0 
+    ? (safeValue.length > 2 
+        ? `${safeValue.slice(0, 2).join(', ')} +${safeValue.length - 2}` 
+        : safeValue.join(', '))
+    : "Vyberte možnosti";
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -45,14 +51,13 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
           aria-expanded={open}
           className="w-full justify-between h-8 min-h-[32px]"
         >
-          {safeValue.length > 0 
-            ? safeValue.join(', ') 
-            : "Vyberte možnosti"}
+          <span className="truncate">{displayValue}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      {safeOptions.length > 0 && (
-        <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent className="w-[200px] p-0" align="start">
+        {/* Only render Command when the popover is open to prevent Array.from errors */}
+        {open && (
           <Command>
             <CommandInput placeholder="Hledat..." />
             <CommandEmpty>Žádné možnosti.</CommandEmpty>
@@ -63,20 +68,22 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
                   value={option}
                   onSelect={() => handleToggleOption(option)}
                 >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      safeValue.includes(option) 
-                        ? "opacity-100" 
-                        : "opacity-0"
-                    }`}
-                  />
-                  {option}
+                  <div className="flex items-center w-full">
+                    <Check
+                      className={`mr-2 h-4 w-4 ${
+                        safeValue.includes(option) 
+                          ? "opacity-100" 
+                          : "opacity-0"
+                      }`}
+                    />
+                    <span className="truncate">{option}</span>
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
           </Command>
-        </PopoverContent>
-      )}
+        )}
+      </PopoverContent>
     </Popover>
   );
 };

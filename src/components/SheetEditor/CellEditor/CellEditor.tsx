@@ -36,60 +36,72 @@ const CellEditor: React.FC<CellEditorProps> = ({
     }
   };
 
-  // Ensure column.options is always an array
-  const safeOptions = Array.isArray(column.options) ? column.options : [];
-
-  // If enumId is provided, use its values instead of options
-  let options = safeOptions;
-  if (column.enumId) {
-    const enumData = getEnum(column.enumId);
-    if (enumData) {
-      options = enumData.values.map(v => v.value);
+  // Get options from enums if enumId is provided, otherwise use column options
+  const getOptions = (): string[] => {
+    if (column.enumId) {
+      const enumData = getEnum(column.enumId);
+      if (enumData && enumData.values && Array.isArray(enumData.values)) {
+        return enumData.values.map(v => v.value);
+      }
     }
-  }
+    
+    // Fallback to column options or empty array
+    return Array.isArray(column.options) ? column.options : [];
+  };
+
+  // Get current value, ensuring it's the right type
+  const getCurrentValue = () => {
+    if (column.type === 'multiselect') {
+      return Array.isArray(cell.value) ? cell.value : [];
+    }
+    return cell.value;
+  };
 
   // Render appropriate editor based on column type and edit state
   const renderEditor = () => {
+    const options = getOptions();
+    const currentValue = getCurrentValue();
+    
     if (isEditing) {
       // Input components for edit mode
       switch (column.type) {
         case 'int':
           return <NumberInput 
-            value={cell.value as number}
+            value={currentValue as number}
             onValueChange={onFinishEdit}
             integer={true}
           />;
         case 'float':
           return <NumberInput 
-            value={cell.value as number}
+            value={currentValue as number}
             onValueChange={onFinishEdit}
             integer={false}
           />;
         case 'date':
           return <DateInput 
-            value={cell.value as string} 
+            value={currentValue as string} 
             onValueChange={onFinishEdit} 
           />;
         case 'select':
           return <SelectInput 
-            value={cell.value as string} 
+            value={currentValue as string} 
             options={options} 
             onValueChange={onFinishEdit} 
           />;
         case 'multiselect':
           return <MultiSelectInput 
-            value={Array.isArray(cell.value) ? cell.value : []} 
+            value={currentValue as string[]} 
             options={options} 
             onValueChange={onFinishEdit} 
           />;
         case 'user':
           return <UserInput 
-            value={cell.value as string} 
+            value={currentValue as string} 
             onValueChange={onFinishEdit} 
           />;
         default:
           return <TextInput 
-            value={cell.value as string} 
+            value={currentValue as string} 
             onValueChange={onFinishEdit} 
           />;
       }
@@ -97,13 +109,13 @@ const CellEditor: React.FC<CellEditorProps> = ({
       // Display components for read mode
       switch (column.type) {
         case 'date':
-          return <DateDisplay value={cell.value as string} />;
+          return <DateDisplay value={currentValue as string} />;
         case 'multiselect':
-          return <MultiValueDisplay value={Array.isArray(cell.value) ? cell.value : []} />;
+          return <MultiValueDisplay value={currentValue as string[]} />;
         case 'user':
-          return <UserDisplay value={cell.value as string} />;
+          return <UserDisplay value={currentValue as string} />;
         default:
-          return <TextDisplay value={cell.value} />;
+          return <TextDisplay value={currentValue} />;
       }
     }
   };
