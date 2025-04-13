@@ -1,147 +1,121 @@
 # SpaceTimeSheets
 
-SpaceTimeSheets je moderní aplikace pro správu projektů a tabulkových dat s využitím SpaceTimeDB - databáze, která umožňuje real-time synchronizaci dat mezi klienty.
+A modern project management and spreadsheet application with real-time collaboration capabilities.
 
-## Popis projektu
+## Project Overview
 
-SpaceTimeSheets slouží jako nástroj pro organizace a týmy, které potřebují společně spravovat projekty a data ve formě tabulek. Hlavní funkce zahrnují:
+SpaceTimeSheets is designed for organizations and teams who need to collaboratively manage projects and tabular data. The application features:
 
-- Správa organizačních jednotek (Units) a jejich členů
-- Vytváření a správa projektů
-- Tabulky s flexibilní strukturou sloupců
-- Verzování dat (savepoints) pro možnost obnovení předchozích stavů
-- Real-time spolupráce pomocí SpaceTimeDB
+- Project management with customizable sheets
+- Flexible column structure for different data types
+- Version history (savepoints) for data recovery
+- Real-time collaboration
+- Role-based user management
 
-## Technologie
+## Technologies
 
-- **Server**: C# s SpaceTimeDB modulem
-- **Klient**: React, TypeScript, Tailwind CSS, shadcn/ui
-- **Databáze**: SpaceTimeDB pro real-time synchronizaci
+This project is built with:
 
-## Instalace a nastavení
+- **Frontend**: React, TypeScript, Vite
+- **UI Components**: shadcn/ui with Tailwind CSS
+- **Data Storage**: Local storage with cloud sync capabilities
+- **API Integration**: REST API architecture
 
-### Předpoklady
+## Getting Started
 
-- [Node.js & npm](https://nodejs.org/) (verze 18 nebo novější)
-- [.NET SDK 8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [SpaceTimeDB CLI](https://spacetimedb.com/docs/install)
+### Prerequisites
 
-### Instalace SpaceTimeDB
+- [Node.js](https://nodejs.org/) (v18 or newer)
+- npm or another package manager (yarn, pnpm, etc.)
 
-```sh
-curl -fsSL https://spacetimedb.com/install.sh | bash
-```
+### Installation
 
-Ověřte instalaci:
+1. Clone the repository:
 
 ```sh
-spacetime --version
-```
-
-### Instalace .NET 8 workload pro SpaceTimeDB
-
-```sh
-dotnet workload install wasi-experimental
-```
-
-### Nastavení projektu
-
-1. Naklonujte repozitář:
-
-```sh
-git clone <URL_REPOZITÁŘE>
+git clone <REPOSITORY_URL>
 cd spacetimeSheets
 ```
 
-2. Instalace klientských závislostí:
+2. Install dependencies:
 
 ```sh
 npm install
 ```
 
-3. Vygenerování module bindings pro TypeScript:
-
-```sh
-mkdir -p src/module_bindings
-spacetime generate --lang typescript --out-dir src/module_bindings --project-path server
-```
-
-## Spuštění projektu
-
-### Sestavení a spuštění server modulu
-
-1. Sestavte SpaceTimeDB C# modul:
-
-```sh
-cd server
-dotnet build
-```
-
-2. Vytvořte nový SpaceTimeDB projekt (pouze pokud ještě neexistuje):
-
-```sh
-spacetime project create spacetime-sheets
-```
-
-3. Nasaďte modul do SpaceTimeDB:
-
-```sh
-spacetime publish --project spacetime-sheets
-```
-
-### Spuštění klientské aplikace
+3. Start the development server:
 
 ```sh
 npm run dev
 ```
 
-Aplikace bude dostupná na `http://localhost:5173` nebo jiném portu zobrazeném v terminálu.
+The application will be available at `http://localhost:5173` (or another port shown in your terminal).
 
-## Vývoj
+## Project Structure
 
-### Úprava server modulu
-
-Po úpravě C# kódu v `server/Lib.cs` je potřeba:
-
-1. Znovu sestavit modul:
-
-```sh
-cd server
-dotnet build
+```
+spacetimeSheets/
+├── public/           # Static assets
+├── server/           # Server-side code
+│   └── Lib.cs        # Data models and business logic
+├── src/
+│   ├── components/   # React components
+│   ├── hooks/        # Custom React hooks
+│   ├── pages/        # Page components
+│   ├── services/     # Data services
+│   ├── stores/       # State management
+│   ├── types/        # TypeScript type definitions
+│   └── utils/        # Utility functions
+├── package.json      # Project dependencies
+└── README.md         # This file
 ```
 
-2. Aktualizovat nasazení:
+## Features
+
+### Projects and Sheets
+
+- Create and manage projects with multiple sheets
+- Each sheet can have a custom structure for different use cases
+- Support for different column types (text, numbers, dates, etc.)
+
+### Row Management
+
+- Group rows for better organization
+- Reorder rows and groups with drag-and-drop
+
+### Data Management
+
+- Version control with savepoints
+- Import and export data
+- Filter and search functionality
+
+### Collaboration
+
+- Multiple users can work on the same project
+- Role-based permissions (admin, member, viewer)
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview the production build
+- `npm run lint` - Run ESLint for code quality
+- `npm run test` - Run tests (when available)
+
+## Deployment
+
+The project can be deployed to any static hosting service:
+
+1. Build the project:
 
 ```sh
-spacetime publish --project spacetime-sheets
+npm run build
 ```
 
-3. Aktualizovat TypeScript bindings:
+2. Deploy the contents of the `dist` directory to your hosting service
 
-```sh
-spacetime generate --lang typescript --out-dir src/module_bindings --project-path server
-```
+## License
 
-### Úprava klientské aplikace
-
-Klientská aplikace se automaticky obnovuje při úpravách zdrojových souborů během vývoje.
-
-## Struktura databáze
-
-SpaceTimeDB modul definuje následující entity:
-
-- **User** - uživatel systému
-- **Unit** - organizační jednotka
-- **UnitMember** - propojovací tabulka mezi uživateli a jednotkami
-- **Project** - projekt patřící jednotce
-- **Sheet** - tabulka patřící projektu
-- **RowGroup** - skupina řádků v tabulce
-- **Row** - řádek tabulky
-- **Cell** - buňka tabulky
-- **Enum** - definice výčtového typu
-- **EnumItem** - položka výčtového typu
-- **Savepoint** - uložený bod v historii tabulky
-
-## Licence
-
-Tento projekt je licencován pod [MIT licencí](LICENSE).
+This project is [MIT](LICENSE) licensed.
