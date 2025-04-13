@@ -117,43 +117,97 @@ The React frontend connects to SpacetimeDB using:
 - Optimized data fetching to minimize network traffic
 - Real-time subscriptions for live updates
 
-## Deployment
+## Development Workflow
 
 ### Local Development
 
-To run the application locally:
+For local development with SpacetimeDB:
 
 ```sh
-./scripts/run-local.sh
+# Start the full local development environment (see makefile for details)
+make local
 ```
 
-This will:
-1. Build the C# server module
-2. Deploy it to your local SpacetimeDB instance
-3. Start the React frontend with the correct configuration
+This script will:
+1. Build the C# module
+2. Start a local SpacetimeDB instance if not already running
+3. Deploy the module to the local SpacetimeDB
+4. Start the React development server
 
-### Deploy to SpacetimeDB Maincloud
+### TypeScript Bindings
 
-To deploy to SpacetimeDB's managed cloud service:
+To generate TypeScript bindings from the C# module:
 
 ```sh
+# Generate bindings
+npm run generate-bindings
+```
+
+**Important:** Always regenerate the bindings after changing the C# module (Lib.cs) to ensure the frontend has up-to-date type definitions.
+
+### Testing
+
+SpacetimeSheets includes multiple levels of testing:
+
+```sh
+# Run all tests (except E2E)
+npm run test
+
+# Run E2E tests (requires local SpacetimeDB)
+npm run test:e2e
+
+# Run TypeScript type checking
+npm run typecheck
+
+# Run ESLint checks
+npm run lint
+```
+
+#### Test Types:
+
+1. **Server Tests:** C# unit tests for the SpacetimeDB module
+2. **TypeScript Type Checking:** Static analysis of the frontend code
+3. **Linting:** Code style and quality checks
+4. **E2E Tests:** Playwright-based end-to-end testing of the full application
+
+### Deployment
+
+For deployment to the SpacetimeDB cloud:
+
+```sh
+# Deploy to the main cloud instance
 ./scripts/deploy-maincloud.sh
 ```
 
-This will:
-1. Build the C# server module
-2. Deploy it to SpacetimeDB Maincloud
-3. Output connection details for the frontend
+## Architecture
 
-### GitHub Actions Deployment
+### Data Flow
 
-This repository includes GitHub Actions workflow for automatic deployment:
+1. **Client ⟶ Server:**
+   - Reducer calls from client to SpacetimeDB module
+   - Optimized bulk operations for performance
 
-1. Add the following secrets to your GitHub repository:
-   - `SPACETIME_AUTH_TOKEN`: Your SpacetimeDB authentication token
-   - `SPACETIME_MODULE_NAME`: Your desired module name
+2. **Server ⟶ Client:**
+   - SQL subscriptions for real-time data
+   - Optimized query results for reduced network traffic
 
-2. The workflow will automatically deploy your application when changes are pushed to the main branch.
+3. **Real-time Collaboration:**
+   - All changes instantly propagate to connected clients
+   - Conflict resolution handled by SpacetimeDB transactions
+
+### Testing Strategy
+
+1. **Unit Testing:**
+   - Server-side C# tests for module logic
+   - Isolated tests for client components
+
+2. **Integration Testing:**
+   - React component integration tests
+   - API integration tests against mock SpacetimeDB
+
+3. **End-to-End Testing:**
+   - Playwright tests simulating real user interactions
+   - Full application tests including SpacetimeDB integration
 
 ## Features
 
@@ -181,15 +235,12 @@ This repository includes GitHub Actions workflow for automatic deployment:
 - Real-time updates across all connected clients
 - Role-based permissions (admin, member, viewer)
 
-## Development
+## Future Improvements
 
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build frontend for production
-- `npm run preview` - Preview the production build
-- `./scripts/run-local.sh` - Run local development environment
-- `./scripts/deploy-maincloud.sh` - Deploy to SpacetimeDB Maincloud
+- Enhanced conflict resolution for concurrent edits
+- Offline mode with sync capabilities
+- Performance optimizations for large datasets
+- Mobile application support
 
 ## License
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import * as moduleBindings from './index';
 
 // Define types for the identity management
 export interface Identity {
@@ -48,186 +49,247 @@ interface SpacetimeClient {
   getSheetData: (sheetId: string) => Promise<any>;
 }
 
-// Helper to create mock client - will be replaced with actual SpacetimeDB client
-class MockClient implements SpacetimeClient {
-  private mockReducer: (name: string, ...args: any[]) => Promise<any>;
-  private waitForQueryResult: (queryId: string) => Promise<any>;
-
+// Real SpacetimeDB client implementation
+class SpacetimeDBClient implements SpacetimeClient {
+  private dbConnection: any;
+  private userId: string;
+  private queryResultListeners: Map<string, (result: any) => void>;
+  
   constructor() {
-    this.mockReducer = async (name: string, ...args: any[]) => {
-      console.log(`Mock client called ${name} with args:`, args);
-      // For now, just log and return an empty successful response
-      return { success: true };
-    };
+    this.queryResultListeners = new Map();
+    this.userId = localStorage.getItem('userId') || '';
+  }
+  
+  async connect(address: string, namespace: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      try {
+        // Use the DbConnection builder from the generated moduleBindings
+        this.dbConnection = moduleBindings.DbConnection.builder()
+          .withUri(address)
+          .withModuleName(namespace)
+          .onConnect((connection: any, identity: any, token: string) => {
+            console.log('Connected to SpacetimeDB', { identity });
+            localStorage.setItem('spacetimeToken', token);
+            resolve({ success: true, identity, token });
+          })
+          .onConnectError((ctx: any, error: Error) => {
+            console.error('Connection error:', error);
+            reject(error);
+          })
+          .onDisconnect((ctx: any, error: Error | null) => {
+            console.log('Disconnected from SpacetimeDB', error);
+          })
+          .build();
 
-    this.waitForQueryResult = async (queryId: string) => {
-      // Simulate waiting for query result
-      await new Promise(resolve => setTimeout(resolve, 100));
-      return { StatusCode: 200, JsonData: '{}' };
-    };
+        // Set up subscription for QueryResult table
+        const subscriptionBuilder = this.dbConnection.subscriptionBuilder();
+        subscriptionBuilder.subscribe(["SELECT * FROM QueryResult"]);
+
+        // Setup listener for QueryResult table updates
+        this.dbConnection.db.queryResult.onInsert((ctx: any, row: any) => {
+          if (row.QueryId && this.queryResultListeners.has(row.QueryId)) {
+            const callback = this.queryResultListeners.get(row.QueryId);
+            if (callback) callback(row);
+          }
+        });
+      } catch (err) {
+        console.error('Failed to connect to SpacetimeDB:', err);
+        reject(err);
+      }
+    });
+  }
+  
+  // Helper to call a reducer and return a promise
+  private async callReducer(name: string, ...args: any[]): Promise<any> {
+    if (!this.dbConnection) {
+      throw new Error('SpacetimeDB client not connected');
+    }
+    
+    return new Promise((resolve, reject) => {
+      try {
+        console.log(`Calling reducer ${name} with args:`, args);
+        // Use the reducers field from DbConnection
+        this.dbConnection.reducers[name](...args);
+        resolve({ success: true });
+      } catch (err) {
+        console.error(`Error calling reducer ${name}:`, err);
+        reject(err);
+      }
+    });
+  }
+  
+  // Helper to call a reducer that returns a result via QueryResult table
+  private async callReducerWithResult(name: string, ...args: any[]): Promise<any> {
+    if (!this.dbConnection) {
+      throw new Error('SpacetimeDB client not connected');
+    }
+    
+    const queryId = uuidv4();
+    
+    return new Promise((resolve, reject) => {
+      // Setup a timeout to reject the promise if no response is received
+      const timeoutId = setTimeout(() => {
+        this.queryResultListeners.delete(queryId);
+        reject(new Error(`Timeout waiting for ${name} result`));
+      }, 10000); // 10 seconds timeout
+      
+      // Set up the listener for this query
+      this.queryResultListeners.set(queryId, (result) => {
+        clearTimeout(timeoutId);
+        this.queryResultListeners.delete(queryId);
+        
+        if (result.StatusCode >= 400) {
+          reject(new Error(result.ErrorMessage || `Error ${result.StatusCode} from ${name}`));
+        } else {
+          try {
+            // Parse the JSON data if it exists
+            const jsonData = result.JsonData ? JSON.parse(result.JsonData) : {};
+            resolve({
+              ...result,
+              data: jsonData
+            });
+          } catch (err) {
+            reject(new Error(`Failed to parse result from ${name}: ${err}`));
+          }
+        }
+      });
+      
+      // Call the reducer with the queryId
+      try {
+        const reducerArgs = [...args, queryId];
+        this.dbConnection.reducers[name](...reducerArgs);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        this.queryResultListeners.delete(queryId);
+        reject(err);
+      }
+    });
   }
 
   // Core reducers
   createUser(email: string, name: string, password: string): Promise<any> {
-    return this.mockReducer('CreateUser', email, name, password);
+    return this.callReducer('CreateUser', email, name, password);
   }
 
   createUnit(name: string, description: string, userId: string): Promise<any> {
-    return this.mockReducer('CreateUnit', name, description, userId);
+    return this.callReducer('CreateUnit', name, description, userId);
   }
 
   addUserToUnit(unitId: string, userId: string, role: string): Promise<any> {
-    return this.mockReducer('AddUserToUnit', unitId, userId, role);
+    return this.callReducer('AddUserToUnit', unitId, userId, role);
   }
 
   // Project reducers
   createProject(unitId: string, name: string, description: string): Promise<any> {
-    return this.mockReducer('CreateProject', unitId, name, description);
+    return this.callReducer('CreateProject', unitId, name, description);
   }
 
   updateProject(id: string, name: string, description: string): Promise<any> {
-    return this.mockReducer('UpdateProject', id, name, description);
+    return this.callReducer('UpdateProject', id, name, description);
   }
 
   deleteProject(id: string): Promise<any> {
-    return this.mockReducer('DeleteProject', id);
+    return this.callReducer('DeleteProject', id);
   }
 
   // Sheet reducers
   createSheet(projectId: string, name: string, description: string, type: string, columnsJson: string): Promise<any> {
-    return this.mockReducer('CreateSheet', projectId, name, description, type, columnsJson);
+    return this.callReducer('CreateSheet', projectId, name, description, type, columnsJson);
   }
 
   updateSheet(id: string, name: string, description: string, type: string, columnsJson: string): Promise<any> {
-    return this.mockReducer('UpdateSheet', id, name, description, type, columnsJson);
+    return this.callReducer('UpdateSheet', id, name, description, type, columnsJson);
   }
 
   deleteSheet(id: string): Promise<any> {
-    return this.mockReducer('DeleteSheet', id);
+    return this.callReducer('DeleteSheet', id);
   }
 
   // Row reducers
   createRow(sheetId: string, groupId: string, orderIndex: number): Promise<any> {
-    return this.mockReducer('CreateRow', sheetId, groupId, orderIndex);
+    return this.callReducer('CreateRow', sheetId, groupId, orderIndex);
   }
 
   // Cell reducers
   updateCell(rowId: string, columnId: string, value: string, format: string): Promise<any> {
-    return this.mockReducer('UpdateCell', rowId, columnId, value, format);
+    return this.callReducer('UpdateCell', rowId, columnId, value, format);
   }
 
   // Savepoint reducers
   async createSavepoint(sheetId: string, message: string): Promise<string> {
-    const queryId = uuidv4();
-    console.log(`Creating savepoint for sheet ${sheetId} with message: ${message}`);
-    
-    // V produkci by zde byl skutečný SpacetimeDB call
-    await this.mockReducer("CreateSavepoint", [sheetId, message, "current-user", queryId]);
-    
-    // Počkat na výsledek
-    const result = await this.waitForQueryResult(queryId);
-    if (result.StatusCode !== 200) {
-      throw new Error(result.ErrorMessage || 'Failed to create savepoint');
-    }
-    
-    try {
-      const data = JSON.parse(result.JsonData);
-      return data.SavepointId;
-    } catch (error) {
-      console.error('Error parsing savepoint data:', error);
-      throw new Error('Failed to parse savepoint response');
-    }
+    const result = await this.callReducerWithResult('CreateSavepoint', sheetId, message, this.userId);
+    return result.data?.SavepointId || '';
   }
 
-  async getSavepoints(sheetId: string): Promise<{ 
-    savepoints: Array<{
-      id: string;
-      sheetId: string;
-      createdAt: number;
-      message: string;
-      createdByUserId: string;
-      timestampAlias: string;
-    }>;
-    currentSavepointId: string;
-  }> {
-    const queryId = uuidv4();
-    console.log(`Getting savepoints for sheet ${sheetId}`);
-    
-    // V produkci by zde byl skutečný SpacetimeDB call
-    await this.mockReducer("GetSavepoints", [sheetId, queryId]);
-    
-    // Počkat na výsledek
-    const result = await this.waitForQueryResult(queryId);
-    if (result.StatusCode !== 200) {
-      throw new Error(result.ErrorMessage || 'Failed to get savepoints');
-    }
-    
-    try {
-      const data = JSON.parse(result.JsonData);
-      return {
-        savepoints: data.Savepoints,
-        currentSavepointId: data.CurrentSavepointId
-      };
-    } catch (error) {
-      console.error('Error parsing savepoints data:', error);
-      throw new Error('Failed to parse savepoints response');
-    }
+  async getSavepoints(sheetId: string): Promise<any> {
+    const result = await this.callReducerWithResult('GetSavepoints', sheetId);
+    return result.data?.Savepoints || [];
   }
 
-  async revertToSavepoint(savepointId: string): Promise<boolean> {
-    const queryId = uuidv4();
-    console.log(`Reverting to savepoint ${savepointId}`);
-    
-    // V produkci by zde byl skutečný SpacetimeDB call
-    await this.mockReducer("RevertToSavepoint", [savepointId, queryId]);
-    
-    // Počkat na výsledek
-    const result = await this.waitForQueryResult(queryId);
-    if (result.StatusCode !== 200) {
-      throw new Error(result.ErrorMessage || 'Failed to revert to savepoint');
-    }
-    
-    try {
-      const data = JSON.parse(result.JsonData);
-      return data.Success === true;
-    } catch (error) {
-      console.error('Error parsing revert response:', error);
-      throw new Error('Failed to parse revert response');
-    }
+  async revertToSavepoint(savepointId: string): Promise<any> {
+    const result = await this.callReducerWithResult('RevertToSavepoint', savepointId);
+    return result.data;
   }
 
   // Enum reducers
   createEnum(unitId: string, name: string, description: string): Promise<any> {
-    return this.mockReducer('CreateEnum', unitId, name, description);
+    return this.callReducer('CreateEnum', unitId, name, description);
   }
 
   addEnumItem(enumId: string, value: string, label: string, color: string, orderIndex: number): Promise<any> {
-    return this.mockReducer('AddEnumItem', enumId, value, label, color, orderIndex);
+    return this.callReducer('AddEnumItem', enumId, value, label, color, orderIndex);
   }
 
   deleteEnum(id: string): Promise<any> {
-    return this.mockReducer('DeleteEnum', id);
+    return this.callReducer('DeleteEnum', id);
   }
 
-  // Optimized reducers 
-  getEnumOptions(enumId: string): Promise<any> {
-    return this.mockReducer('GetEnumOptions', enumId);
+  // Optimized reducers
+  async getEnumOptions(enumId: string): Promise<any> {
+    const queryId = uuidv4();
+    const result = await this.callReducerWithResult('GetEnumOptions', enumId, queryId);
+    return result.data || [];
   }
 
-  getAllEnumsForUnit(unitId: string): Promise<any> {
-    return this.mockReducer('GetAllEnumsForUnit', unitId);
+  async getAllEnumsForUnit(unitId: string): Promise<any> {
+    const queryId = uuidv4();
+    await this.callReducerWithResult('GetAllEnumsForUnit', unitId, queryId);
+    
+    // Here we need to collect all the enum data from multiple QueryResult entries
+    // This would need additional implementation to aggregate the results
+    // For now return empty result
+    return { enums: [], items: {} };
   }
 
   updateMultipleCells(cellUpdates: Array<{rowId: string, columnId: string, value: string, format?: string}>): Promise<any> {
-    return this.mockReducer('UpdateMultipleCells', cellUpdates);
+    const cellUpdatesJson = JSON.stringify(cellUpdates);
+    return this.callReducer('UpdateMultipleCells', cellUpdatesJson);
   }
 
-  getProjectList(unitId: string, sheetIdsForData: string[], columnMapping: Record<string, string>): Promise<any> {
-    return this.mockReducer('GetProjectList', unitId, sheetIdsForData, columnMapping);
+  async getProjectList(unitId: string, sheetIdsForData: string[], columnMapping: Record<string, string>): Promise<any> {
+    const queryId = uuidv4();
+    const sheetIdsJson = JSON.stringify(sheetIdsForData);
+    const columnMappingJson = JSON.stringify(
+      Object.entries(columnMapping).map(([key, value]) => ({ Key: key, Value: value }))
+    );
+    
+    const result = await this.callReducerWithResult('GetProjectList', unitId, sheetIdsJson, columnMappingJson, queryId);
+    return result.data?.Savepoints || [];
   }
 
-  getSheetData(sheetId: string): Promise<any> {
-    return this.mockReducer('GetSheetData', sheetId);
+  async getSheetData(sheetId: string): Promise<any> {
+    const queryId = uuidv4();
+    await this.callReducerWithResult('GetSheetData', sheetId, queryId);
+    
+    // This is a complex query that returns multiple results
+    // Would need additional implementation to aggregate all the QueryResult entries
+    // For now return empty result
+    return {
+      sheet: {},
+      groups: [],
+      rows: [],
+      cells: {}
+    };
   }
 }
 
@@ -236,19 +298,53 @@ const ClientContext = createContext<SpacetimeClient | null>(null);
 const IdentityContext = createContext<Identity | null>(null);
 
 // Provider component to manage the client
-export const SpacetimeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [client] = useState<SpacetimeClient>(new MockClient());
-  const [identity, setIdentity] = useState<Identity | null>(null);
-
-  // In a real app, we'd initialize the client and identity from SpacetimeDB here
+export const SpacetimeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [client, setClient] = useState<SpacetimeClient | null>(null);
+  const [identity, setIdentity] = useState<Identity>({
+    userId: localStorage.getItem('userId') || '',
+    activeUnitId: localStorage.getItem('activeUnitId') || null
+  });
+  
   useEffect(() => {
-    // For demo, create a mock identity
-    setIdentity({
-      userId: 'user-1',
-      activeUnitId: 'unit-1'
-    });
+    const initClient = async () => {
+      try {
+        // Get address and namespace from env vars or use defaults
+        const address = import.meta.env.VITE_SPACETIME_ADDRESS || 'http://localhost:3000';
+        const namespace = import.meta.env.VITE_SPACETIME_NAMESPACE || 'spacetime_sheets';
+        
+        const spacetimeClient = new SpacetimeDBClient();
+        const result = await spacetimeClient.connect(address, namespace);
+        
+        // Update the identity if we received it from the connection
+        if (result?.identity) {
+          setIdentity({
+            ...identity,
+            userId: result.identity
+          });
+        }
+        
+        setClient(spacetimeClient);
+        console.log('Connected to SpacetimeDB');
+      } catch (err) {
+        console.error('Failed to initialize SpacetimeDB client:', err);
+        // Create a client anyway for local development fallback
+        setClient(new SpacetimeDBClient());
+      }
+    };
+    
+    initClient();
   }, []);
-
+  
+  // Update localStorage when identity changes
+  useEffect(() => {
+    if (identity.userId) {
+      localStorage.setItem('userId', identity.userId);
+    }
+    if (identity.activeUnitId) {
+      localStorage.setItem('activeUnitId', identity.activeUnitId);
+    }
+  }, [identity]);
+  
   return (
     <ClientContext.Provider value={client}>
       <IdentityContext.Provider value={identity}>
@@ -264,11 +360,15 @@ export const useIdentity = () => useContext(IdentityContext);
 
 // Hook pro snadnější použití v komponentách
 export const useSpacetime = () => {
-  const client = useContext(ClientContext);
+  const client = useClient();
+  const identity = useIdentity();
   
   if (!client) {
-    throw new Error("useSpacetime musí být použit uvnitř SpacetimeProvider");
+    throw new Error('useSpacetime must be used within a SpacetimeProvider');
   }
   
-  return client;
+  return {
+    client,
+    identity
+  };
 };

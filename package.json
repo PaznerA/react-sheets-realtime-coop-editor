@@ -8,7 +8,12 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "generate-bindings": "bash ./scripts/generate-bindings.sh",
+    "test": "bash ./scripts/run-tests.sh",
+    "test:e2e": "bash ./scripts/run-tests.sh --e2e",
+    "local": "bash ./scripts/run-local.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -67,6 +72,7 @@
   "devDependencies": {
     "@clockworklabs/spacetimedb-sdk": "^1.0.3",
     "@eslint/js": "^9.9.0",
+    "@playwright/test": "^1.51.1",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
