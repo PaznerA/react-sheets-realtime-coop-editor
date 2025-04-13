@@ -1,6 +1,8 @@
+
 import { SPACETIME_CONFIG } from "@/config/spaceTimeConfig";
 import { Project } from "@/types/project";
 import { SheetData } from "@/types/sheet";
+import { getSampleProjects, createEmptySheet } from "@/data/sampleData";
 
 // Local storage keys
 const PROJECTS_KEY = "sheet-editor-projects";
@@ -11,37 +13,6 @@ const USE_CLOUD_KEY = "sheet-editor-use-cloud";
 const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
-
-// Initial sample data for demonstration
-const getSampleProjects = (): Project[] => [
-  {
-    id: "proj-1",
-    unitId: "unit-1",
-    name: "Marketing Campaign",
-    description: "Q2 2023 marketing campaign planning",
-    createdAt: new Date(2023, 3, 15),
-    updatedAt: new Date(2023, 5, 20),
-    sheetId: "sheet-1"
-  },
-  {
-    id: "proj-2",
-    unitId: "unit-1",
-    name: "Product Roadmap",
-    description: "Product feature planning for next release",
-    createdAt: new Date(2023, 1, 10),
-    updatedAt: new Date(2023, 6, 5),
-    sheetId: "sheet-2"
-  },
-  {
-    id: "proj-3",
-    unitId: "unit-1",
-    name: "Budget Overview",
-    description: "Annual department budget allocation",
-    createdAt: new Date(2023, 0, 5),
-    updatedAt: new Date(2023, 4, 12),
-    sheetId: "sheet-3"
-  }
-];
 
 // Initialize local storage with sample data if empty
 const initializeLocalStorage = () => {
@@ -96,7 +67,7 @@ export const deleteProject = (id: string): void => {
 export const getSheetData = (sheetId: string): SheetData | undefined => {
   const sheetsData = localStorage.getItem(SHEETS_KEY);
   const sheets = sheetsData ? JSON.parse(sheetsData) : {};
-  return sheets[sheetId];
+  return sheets[sheetId] || createEmptySheet();
 };
 
 export const saveSheetData = (sheetId: string, data: SheetData): void => {
@@ -110,7 +81,7 @@ export const saveSheetData = (sheetId: string, data: SheetData): void => {
 // SpaceTimeDB integration
 import { DbConnection } from '../module_bindings';
 
-// Inicializace SpaceTimeDB klienta
+// Initialize SpaceTimeDB client
 export const initSpacetimeDB = async (
   host: string, 
   namespace: string,
@@ -120,8 +91,7 @@ export const initSpacetimeDB = async (
   try {
     console.log(`Attempting to connect to SpaceTimeDB at ${host}/${namespace}`);
     
-    // Připojení k SpaceTimeDB - použijeme any aby se TypeScript nerozčiloval
-    // Vygenerované API se může lišit od dokumentace, proto používáme tento přístup
+    // Connect to SpaceTimeDB
     const connection = await (DbConnection.builder() as any).build({
       host,
       namespace,
@@ -136,7 +106,7 @@ export const initSpacetimeDB = async (
       },
     });
     
-    // Uložení spojení do globálního kontextu pro použití v ostatních částech aplikace
+    // Save connection to global context for use in other parts of the application
     window.spacetimedb = connection;
     
     return true;
@@ -146,23 +116,23 @@ export const initSpacetimeDB = async (
   }
 };
 
-// Rozšíření Window interface pro typovou bezpečnost
+// Extend Window interface for type safety
 declare global {
   interface Window {
     spacetimedb: any;
   }
 }
 
-// Nahrazuje původní SpaceTimeClient
+// SpaceTimeClient class
 class SpaceTimeClient {
-  // Projekty
+  // Projects
   async getProjects(): Promise<Project[]> {
     if (!window.spacetimedb) {
       return getProjects();
     }
 
     try {
-      // Získání projektů ze SpaceTimeDB
+      // Get projects from SpaceTimeDB
       const projects: Project[] = [];
       window.spacetimedb.tables.project().forEach((proj: any) => {
         projects.push({
@@ -172,13 +142,13 @@ class SpaceTimeClient {
           description: proj.Description,
           createdAt: new Date(Number(proj.CreatedAt)),
           updatedAt: new Date(Number(proj.UpdatedAt)),
-          sheetId: "" // Toto bude potřeba doplnit podle vaší logiky
+          sheetId: "" // This will need to be filled in with your logic
         });
       });
       return projects;
     } catch (error) {
       console.error("Error fetching projects from SpaceTimeDB:", error);
-      return getProjects(); // Fallback na lokální data
+      return getProjects(); // Fallback to local data
     }
   }
 
@@ -188,7 +158,7 @@ class SpaceTimeClient {
     }
 
     try {
-      // Alternativně můžete implementovat vyhledávání v SpaceTimeDB
+      // Alternatively you can implement searching in SpaceTimeDB
       return getProject(id);
     } catch (error) {
       console.error(`Error fetching project ${id} from SpaceTimeDB:`, error);
@@ -199,7 +169,7 @@ class SpaceTimeClient {
   async createProject(project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> {
     try {
       if (window.spacetimedb) {
-        // Volání SpaceTimeDB reduceru pro vytvoření projektu
+        // Call SpaceTimeDB reducer to create project
         window.spacetimedb.reducers.createProject(
           project.unitId || "", // unitId
           project.name,         // name
@@ -207,8 +177,7 @@ class SpaceTimeClient {
         );
       }
       
-      // Lokálně vytvoříme projekt i když používáme SpaceTimeDB
-      // To zajistí okamžitou odezvu UI, i když čekáme na potvrzení ze serveru
+      // Create project locally as well for immediate UI response
       return createProject(project);
     } catch (error) {
       console.error("Error creating project in SpaceTimeDB:", error);
@@ -219,7 +188,7 @@ class SpaceTimeClient {
   async updateProject(project: Project): Promise<Project> {
     try {
       if (window.spacetimedb) {
-        // Volání SpaceTimeDB reduceru pro aktualizaci projektu
+        // Call SpaceTimeDB reducer to update project
         window.spacetimedb.reducers.updateProject(
           project.id,         // id
           project.name,       // name
@@ -227,7 +196,7 @@ class SpaceTimeClient {
         );
       }
       
-      // Aktualizujeme lokálně
+      // Update locally
       return updateProject(project);
     } catch (error) {
       console.error("Error updating project in SpaceTimeDB:", error);
@@ -238,11 +207,11 @@ class SpaceTimeClient {
   async deleteProject(id: string): Promise<void> {
     try {
       if (window.spacetimedb) {
-        // Volání SpaceTimeDB reduceru pro smazání projektu
+        // Call SpaceTimeDB reducer to delete project
         window.spacetimedb.reducers.deleteProject(id);
       }
       
-      // Smažeme lokálně
+      // Delete locally
       deleteProject(id);
     } catch (error) {
       console.error("Error deleting project in SpaceTimeDB:", error);
@@ -252,17 +221,16 @@ class SpaceTimeClient {
 
   // Sheets
   async getSheetData(sheetId: string): Promise<SheetData | undefined> {
-    // Implementace pomocí SpacetimeDB bude složitější, 
-    // protože potřebujeme získat sloupce, řádky a buňky
+    // Implementation using SpaceTimeDB will be more complex
     return getSheetData(sheetId);
   }
 
   async saveSheetData(sheetId: string, data: SheetData): Promise<void> {
     try {
-      // Implementace uložení dat do SpaceTimeDB
-      // Zde bude složitější logika, která bude muset uložit řádky, buňky, atd.
+      // Implementation for saving data to SpaceTimeDB
+      // This will require more complex logic for rows, cells, etc.
       
-      // Pro teď použijeme lokální implementaci
+      // For now use local implementation
       saveSheetData(sheetId, data);
     } catch (error) {
       console.error("Error saving sheet data in SpaceTimeDB:", error);
@@ -270,10 +238,10 @@ class SpaceTimeClient {
     }
   }
 
-  // Synchronizace
+  // Synchronization
   async sync(): Promise<void> {
     console.log("Synchronizing with SpaceTimeDB...");
-    // Pokud jsme připojeni k SpaceTimeDB, data se synchronizují automaticky
+    // If connected to SpaceTimeDB, data will sync automatically
     if (!window.spacetimedb) {
       console.warn("Not connected to SpaceTimeDB, can't synchronize");
     }
@@ -282,7 +250,7 @@ class SpaceTimeClient {
 
 export const spaceTimeClient = new SpaceTimeClient();
 
-// Exportované funkce pro použití ve front-endu
+// Exported functions for frontend use
 export const updateProjectInCloud = (project: Project) => spaceTimeClient.updateProject(project);
 export const deleteProjectFromCloud = (id: string) => spaceTimeClient.deleteProject(id);
 export const getSheetDataFromCloud = (sheetId: string) => spaceTimeClient.getSheetData(sheetId);

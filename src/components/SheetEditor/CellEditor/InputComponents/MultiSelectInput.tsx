@@ -10,31 +10,53 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
+import { EnumValues } from '@/types/enum';
+
+interface EnumOption {
+  id: string;
+  value: string;
+}
 
 interface MultiSelectInputProps {
-  value: string[];
-  options: string[];
-  onValueChange: (value: string[]) => void;
+  value: EnumValues;
+  options: EnumOption[];
+  onValueChange: (value: EnumValues) => void;
 }
 
 const MultiSelectInput: React.FC<MultiSelectInputProps> = ({ 
-  value = [], // Default to empty array if value is undefined
-  options = [], // Default to empty array if options is undefined
+  value = [], 
+  options = [], 
   onValueChange 
 }) => {
-  // Start with open=false to prevent initial render errors with empty options
   const [open, setOpen] = useState(false);
   
   // Safety check to ensure options and value are always arrays
   const safeOptions = Array.isArray(options) ? options : [];
   const safeValue = Array.isArray(value) ? value : [];
 
-  const handleToggleOption = (option: string) => {
-    const newValues = safeValue.includes(option)
-      ? safeValue.filter(v => v !== option)
-      : [...safeValue, option];
+  const handleToggleOption = (optionId: string) => {
+    const newValues = safeValue.includes(optionId)
+      ? safeValue.filter(id => id !== optionId)
+      : [...safeValue, optionId];
     onValueChange(newValues);
   };
+
+  // Format the display value for the button
+  const getDisplayValue = () => {
+    if (safeValue.length === 0) return "Vyberte možnosti";
+    
+    // Map IDs to their display values
+    const selectedLabels = safeValue.map(id => {
+      const option = safeOptions.find(opt => opt.id === id);
+      return option ? option.value : id;
+    });
+    
+    return selectedLabels.length > 2 
+      ? `${selectedLabels.slice(0, 2).join(', ')} +${selectedLabels.length - 2}` 
+      : selectedLabels.join(', ');
+  };
+
+  const displayValue = getDisplayValue();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -45,38 +67,39 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
           aria-expanded={open}
           className="w-full justify-between h-8 min-h-[32px]"
         >
-          {safeValue.length > 0 
-            ? safeValue.join(', ') 
-            : "Vyberte možnosti"}
+          <span className="truncate">{displayValue}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      {safeOptions.length > 0 && (
-        <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent className="w-[200px] p-0" align="start">
+        {/* Only render Command when the popover is open */}
+        {open && (
           <Command>
             <CommandInput placeholder="Hledat..." />
             <CommandEmpty>Žádné možnosti.</CommandEmpty>
             <CommandGroup>
               {safeOptions.map((option) => (
                 <CommandItem
-                  key={option}
-                  value={option}
-                  onSelect={() => handleToggleOption(option)}
+                  key={option.id}
+                  value={option.value} // Use value for searching
+                  onSelect={() => handleToggleOption(option.id)}
                 >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      safeValue.includes(option) 
-                        ? "opacity-100" 
-                        : "opacity-0"
-                    }`}
-                  />
-                  {option}
+                  <div className="flex items-center w-full">
+                    <Check
+                      className={`mr-2 h-4 w-4 ${
+                        safeValue.includes(option.id) 
+                          ? "opacity-100" 
+                          : "opacity-0"
+                      }`}
+                    />
+                    <span className="truncate">{option.value}</span>
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
           </Command>
-        </PopoverContent>
-      )}
+        )}
+      </PopoverContent>
     </Popover>
   );
 };

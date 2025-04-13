@@ -6,22 +6,50 @@ export const updateCell = (prevData: SheetData, rowId: string, columnId: string,
     ...prevData,
     rows: prevData.rows.map((row) => {
       if (row.id === rowId) {
-        const cellIndex = row.cells.findIndex(cell => cell.columnId === columnId);
+        // Handle cell update in the row's cells object
+        const updatedCells = { ...row.cells };
         
-        if (cellIndex !== -1) {
-          const updatedCells = [...row.cells];
-          updatedCells[cellIndex] = { ...updatedCells[cellIndex], value };
-          return { ...row, cells: updatedCells };
+        if (updatedCells[columnId]) {
+          // Update existing cell
+          updatedCells[columnId] = { 
+            ...updatedCells[columnId], 
+            value 
+          };
         } else {
-          const newCell: Cell = {
+          // Create new cell if it doesn't exist
+          updatedCells[columnId] = {
             id: Math.random().toString(36).substring(2, 15),
             columnId,
             value
           };
-          return { ...row, cells: [...row.cells, newCell] };
         }
+        
+        return { ...row, cells: updatedCells };
       }
       return row;
     }),
   };
+};
+
+// Get cell value with proper type conversion based on column type
+export const getCellValue = (data: SheetData, rowId: string, columnId: string) => {
+  const row = data.rows.find(r => r.id === rowId);
+  if (!row || !row.cells[columnId]) return null;
+  
+  const cell = row.cells[columnId];
+  const column = data.columns.find(c => c.id === columnId);
+  
+  if (!column) return cell.value;
+  
+  // Convert value based on column type
+  switch (column.type) {
+    case 'int':
+      return typeof cell.value === 'number' ? cell.value : parseInt(cell.value, 10) || 0;
+    case 'float':
+      return typeof cell.value === 'number' ? cell.value : parseFloat(cell.value) || 0;
+    case 'multiselect':
+      return Array.isArray(cell.value) ? cell.value : [];
+    default:
+      return cell.value;
+  }
 };

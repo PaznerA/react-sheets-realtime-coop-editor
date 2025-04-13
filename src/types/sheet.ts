@@ -1,3 +1,4 @@
+
 export type CellDataType = 
   | 'text' 
   | 'int' 
@@ -21,9 +22,8 @@ export interface ColumnDefinition {
 
 export interface Cell {
   id: string;
-  rowId: string;
   columnId: string;
-  value: string;
+  value: any; // Can be string, number, EnumValueId, EnumValueId[], etc.
   format?: string;
 }
 
@@ -33,6 +33,9 @@ export interface Row {
   groupId?: string; // Optional - může být prázdný pokud není v žádné skupině
   orderIndex: number;
   cells: { [columnId: string]: Cell };
+  isGroup?: boolean;
+  expanded?: boolean;
+  parentId?: string;
 }
 
 export interface RowGroup {
@@ -41,24 +44,6 @@ export interface RowGroup {
   name: string;
   orderIndex: number;
   isExpanded: boolean;
-}
-
-// Interface pro Enum (výběrový seznam)
-export interface Enum {
-  id: string;
-  unitId: string;
-  name: string;
-  description: string;
-  items: EnumItem[];
-}
-
-export interface EnumItem {
-  id: string;
-  enumId: string;
-  value: string;
-  label: string;
-  color?: string;
-  orderIndex: number;
 }
 
 // Struktura pro verzování pomocí savepoints
@@ -71,7 +56,7 @@ export interface Savepoint {
   timestampAlias?: string; // Uživatelský alias pro jednoduché odkazování (v1.0, v2.1, ...)
 }
 
-// Rozšířená verze dat sheetu - nahrazuje starou SheetData
+// Rozšířená verze dat sheetu
 export interface SheetData {
   id: string;
   name: string;

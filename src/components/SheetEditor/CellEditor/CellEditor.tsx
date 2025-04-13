@@ -1,6 +1,7 @@
 import React from 'react';
 import { Cell as CellType, ColumnDefinition } from '@/types/sheet';
 import { useEnums } from '@/contexts/EnumContext';
+import { EnumValueId, EnumValues } from '@/types/enum';
 import TextDisplay from './DisplayComponents/TextDisplay';
 import DateDisplay from './DisplayComponents/DateDisplay';
 import UserDisplay from './DisplayComponents/UserDisplay';
@@ -17,7 +18,7 @@ interface CellEditorProps {
   column: ColumnDefinition;
   isEditing: boolean;
   onStartEdit: () => void;
-  onFinishEdit: (value: string | number | string[] | null) => void;
+  onFinishEdit: (value: string | number | EnumValueId | EnumValues | null) => void;
 }
 
 const CellEditor: React.FC<CellEditorProps> = ({
@@ -35,6 +36,7 @@ const CellEditor: React.FC<CellEditorProps> = ({
     }
   };
 
+<<<<<<< HEAD
   // Držet default prázdné pole
   let options: string[] = [];
   
@@ -43,11 +45,57 @@ const CellEditor: React.FC<CellEditorProps> = ({
     const enumData = getEnum(column.enumId);
     if (enumData) {
       options = enumData.values.map(v => v.value);
+=======
+  // Get options from enums if enumId is provided
+  const getEnumOptions = () => {
+    if (column.enumId) {
+      const enumData = getEnum(column.enumId);
+      if (enumData && enumData.values && Array.isArray(enumData.values)) {
+        return enumData.values.map(v => ({
+          id: v.id,
+          value: v.value
+        }));
+      }
+>>>>>>> 917ad4831cd22262650eb47e4e79519cc1a23299
     }
-  }
+    
+    // Fallback to empty array
+    return [];
+  };
+  
+  // Get current enum value(s)
+  const getCurrentEnumValue = () => {
+    if (column.type === 'multiselect') {
+      return Array.isArray(cell.value) ? cell.value : [];
+    }
+    return cell.value;
+  };
+
+  // Convert enum IDs to their display values for rendering
+  const getEnumDisplayValue = (enumValueId: EnumValueId | EnumValues) => {
+    if (!column.enumId) return enumValueId;
+    
+    const enumData = getEnum(column.enumId);
+    if (!enumData) return enumValueId;
+    
+    if (Array.isArray(enumValueId)) {
+      // Handle multiselect case
+      return enumValueId.map(id => {
+        const enumValue = enumData.values.find(v => v.id === id);
+        return enumValue ? enumValue.value : id;
+      });
+    } else {
+      // Handle single select case
+      const enumValue = enumData.values.find(v => v.id === enumValueId);
+      return enumValue ? enumValue.value : enumValueId;
+    }
+  };
 
   // Render appropriate editor based on column type and edit state
   const renderEditor = () => {
+    const enumOptions = getEnumOptions();
+    const currentValue = getCurrentEnumValue();
+    
     if (isEditing) {
       // Input components for edit mode
       switch (column.type) {
@@ -70,14 +118,14 @@ const CellEditor: React.FC<CellEditorProps> = ({
           />;
         case 'select':
           return <SelectInput 
-            value={cell.value as string} 
-            options={options} 
+            value={currentValue as EnumValueId} 
+            options={enumOptions} 
             onValueChange={onFinishEdit} 
           />;
         case 'multiselect':
           return <MultiSelectInput 
-            value={Array.isArray(cell.value) ? cell.value : []} 
-            options={options} 
+            value={currentValue as EnumValues} 
+            options={enumOptions} 
             onValueChange={onFinishEdit} 
           />;
         case 'user':
@@ -97,7 +145,9 @@ const CellEditor: React.FC<CellEditorProps> = ({
         case 'date':
           return <DateDisplay value={cell.value as string} />;
         case 'multiselect':
-          return <MultiValueDisplay value={Array.isArray(cell.value) ? cell.value : []} />;
+          return <MultiValueDisplay value={getEnumDisplayValue(cell.value as EnumValues) as string[]} />;
+        case 'select':
+          return <TextDisplay value={getEnumDisplayValue(cell.value as EnumValueId) as string} />;
         case 'user':
           return <UserDisplay value={cell.value as string} />;
         default:
