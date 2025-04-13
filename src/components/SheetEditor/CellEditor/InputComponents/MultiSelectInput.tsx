@@ -56,30 +56,33 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Hledat..." />
-          <CommandEmpty>Žádné možnosti.</CommandEmpty>
-          <CommandGroup>
-            {safeOptions.map((option) => (
-              <CommandItem
-                key={option}
-                value={option}
-                onSelect={() => handleToggleOption(option)}
-              >
-                <div className="flex items-center w-full">
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      safeValue.includes(option) 
-                        ? "opacity-100" 
-                        : "opacity-0"
-                    }`}
-                  />
-                  <span className="truncate">{option}</span>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
+        {/* Only render Command when the popover is open to prevent Array.from errors */}
+        {open && (
+          <Command>
+            <CommandInput placeholder="Hledat..." />
+            <CommandEmpty>Žádné možnosti.</CommandEmpty>
+            <CommandGroup>
+              {safeOptions.map((option) => (
+                <CommandItem
+                  key={option}
+                  value={option}
+                  onSelect={() => handleToggleOption(option)}
+                >
+                  <div className="flex items-center w-full">
+                    <Check
+                      className={`mr-2 h-4 w-4 ${
+                        safeValue.includes(option) 
+                          ? "opacity-100" 
+                          : "opacity-0"
+                      }`}
+                    />
+                    <span className="truncate">{option}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        )}
       </PopoverContent>
     </Popover>
   );

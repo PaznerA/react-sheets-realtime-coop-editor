@@ -40,7 +40,7 @@ const CellEditor: React.FC<CellEditorProps> = ({
   const getOptions = (): string[] => {
     if (column.enumId) {
       const enumData = getEnum(column.enumId);
-      if (enumData && enumData.values) {
+      if (enumData && enumData.values && Array.isArray(enumData.values)) {
         return enumData.values.map(v => v.value);
       }
     }

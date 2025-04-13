@@ -49,26 +49,29 @@ const SelectInput: React.FC<SelectInputProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Hledat..." />
-          <CommandEmpty>Žádné možnosti.</CommandEmpty>
-          <CommandGroup>
-            {safeOptions.map((option) => (
-              <CommandItem
-                key={option}
-                value={option}
-                onSelect={() => handleSelectOption(option)}
-              >
-                <Check
-                  className={`mr-2 h-4 w-4 ${
-                    value === option ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-                {option}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
+        {/* Only render Command when the popover is open to prevent Array.from errors */}
+        {open && (
+          <Command>
+            <CommandInput placeholder="Hledat..." />
+            <CommandEmpty>Žádné možnosti.</CommandEmpty>
+            <CommandGroup>
+              {safeOptions.map((option) => (
+                <CommandItem
+                  key={option}
+                  value={option}
+                  onSelect={() => handleSelectOption(option)}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${
+                      value === option ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  {option}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        )}
       </PopoverContent>
     </Popover>
   );
