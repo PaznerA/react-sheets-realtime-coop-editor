@@ -1,73 +1,147 @@
-# Welcome to your Lovable project
+# SpaceTimeSheets
 
-## Project info
+SpaceTimeSheets je moderní aplikace pro správu projektů a tabulkových dat s využitím SpaceTimeDB - databáze, která umožňuje real-time synchronizaci dat mezi klienty.
 
-**URL**: https://lovable.dev/projects/2cc5928b-81a0-488f-8052-74b218ba4f3c
+## Popis projektu
 
-## How can I edit this code?
+SpaceTimeSheets slouží jako nástroj pro organizace a týmy, které potřebují společně spravovat projekty a data ve formě tabulek. Hlavní funkce zahrnují:
 
-There are several ways of editing your application.
+- Správa organizačních jednotek (Units) a jejich členů
+- Vytváření a správa projektů
+- Tabulky s flexibilní strukturou sloupců
+- Verzování dat (savepoints) pro možnost obnovení předchozích stavů
+- Real-time spolupráce pomocí SpaceTimeDB
 
-**Use Lovable**
+## Technologie
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2cc5928b-81a0-488f-8052-74b218ba4f3c) and start prompting.
+- **Server**: C# s SpaceTimeDB modulem
+- **Klient**: React, TypeScript, Tailwind CSS, shadcn/ui
+- **Databáze**: SpaceTimeDB pro real-time synchronizaci
 
-Changes made via Lovable will be committed automatically to this repo.
+## Instalace a nastavení
 
-**Use your preferred IDE**
+### Předpoklady
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- [Node.js & npm](https://nodejs.org/) (verze 18 nebo novější)
+- [.NET SDK 8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [SpaceTimeDB CLI](https://spacetimedb.com/docs/install)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Instalace SpaceTimeDB
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+curl -fsSL https://spacetimedb.com/install.sh | bash
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Ověřte instalaci:
 
-# Step 3: Install the necessary dependencies.
-npm i
+```sh
+spacetime --version
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Instalace .NET 8 workload pro SpaceTimeDB
+
+```sh
+dotnet workload install wasi-experimental
+```
+
+### Nastavení projektu
+
+1. Naklonujte repozitář:
+
+```sh
+git clone <URL_REPOZITÁŘE>
+cd spacetimeSheets
+```
+
+2. Instalace klientských závislostí:
+
+```sh
+npm install
+```
+
+3. Vygenerování module bindings pro TypeScript:
+
+```sh
+mkdir -p src/module_bindings
+spacetime generate --lang typescript --out-dir src/module_bindings --project-path server
+```
+
+## Spuštění projektu
+
+### Sestavení a spuštění server modulu
+
+1. Sestavte SpaceTimeDB C# modul:
+
+```sh
+cd server
+dotnet build
+```
+
+2. Vytvořte nový SpaceTimeDB projekt (pouze pokud ještě neexistuje):
+
+```sh
+spacetime project create spacetime-sheets
+```
+
+3. Nasaďte modul do SpaceTimeDB:
+
+```sh
+spacetime publish --project spacetime-sheets
+```
+
+### Spuštění klientské aplikace
+
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Aplikace bude dostupná na `http://localhost:5173` nebo jiném portu zobrazeném v terminálu.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Vývoj
 
-**Use GitHub Codespaces**
+### Úprava server modulu
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Po úpravě C# kódu v `server/Lib.cs` je potřeba:
 
-## What technologies are used for this project?
+1. Znovu sestavit modul:
 
-This project is built with:
+```sh
+cd server
+dotnet build
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+2. Aktualizovat nasazení:
 
-## How can I deploy this project?
+```sh
+spacetime publish --project spacetime-sheets
+```
 
-Simply open [Lovable](https://lovable.dev/projects/2cc5928b-81a0-488f-8052-74b218ba4f3c) and click on Share -> Publish.
+3. Aktualizovat TypeScript bindings:
 
-## Can I connect a custom domain to my Lovable project?
+```sh
+spacetime generate --lang typescript --out-dir src/module_bindings --project-path server
+```
 
-Yes it is!
+### Úprava klientské aplikace
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Klientská aplikace se automaticky obnovuje při úpravách zdrojových souborů během vývoje.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Struktura databáze
+
+SpaceTimeDB modul definuje následující entity:
+
+- **User** - uživatel systému
+- **Unit** - organizační jednotka
+- **UnitMember** - propojovací tabulka mezi uživateli a jednotkami
+- **Project** - projekt patřící jednotce
+- **Sheet** - tabulka patřící projektu
+- **RowGroup** - skupina řádků v tabulce
+- **Row** - řádek tabulky
+- **Cell** - buňka tabulky
+- **Enum** - definice výčtového typu
+- **EnumItem** - položka výčtového typu
+- **Savepoint** - uložený bod v historii tabulky
+
+## Licence
+
+Tento projekt je licencován pod [MIT licencí](LICENSE).
