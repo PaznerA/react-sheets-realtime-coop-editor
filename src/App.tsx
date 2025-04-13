@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,16 +14,8 @@ import NotFound from "./pages/NotFound";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { EnumProvider } from "./contexts/EnumContext";
 import { SpacetimeProvider } from "./module_bindings/client";
-import { SPACETIME_CONFIG } from "./config/spaceTimeConfig";
 
 const queryClient = new QueryClient();
-
-// Konfigurace pro SpacetimeDB - použití defaultních hodnot, pokud konfigurace chybí
-const spacetimeConfig = {
-  host: "localhost",
-  port: 8080,
-  namespace: "spacetime-sheets"
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -1,8 +1,8 @@
 
-import { SheetData, Row, Cell } from "@/types/sheet";
+import { SheetData, SheetRow, Cell } from "@/types/sheet";
 
-export const addRow = (prevData: SheetData, row: Omit<Row, "id">): SheetData => {
-  const newRow: Row = {
+export const addRow = (prevData: SheetData, row: Omit<SheetRow, "id">): SheetData => {
+  const newRow: SheetRow = {
     id: Math.random().toString(36).substring(2, 15),
     ...row,
   };
@@ -12,7 +12,7 @@ export const addRow = (prevData: SheetData, row: Omit<Row, "id">): SheetData => 
   };
 };
 
-export const updateRow = (prevData: SheetData, rowId: string, updatedRow: Partial<Row>): SheetData => {
+export const updateRow = (prevData: SheetData, rowId: string, updatedRow: Partial<SheetRow>): SheetData => {
   return {
     ...prevData,
     rows: prevData.rows.map((row) =>
@@ -36,7 +36,7 @@ export const moveRow = (prevData: SheetData, rowId: string, targetIndex: number)
   
   const updatedRows = rows.map((row, index) => ({
     ...row,
-    orderIndex: index,
+    order: index,
   }));
   
   return {
@@ -52,28 +52,24 @@ export const addRowAfter = (prevData: SheetData, rowId: string): SheetData => {
   if (rowIndex === -1) return prevData;
   
   const referenceRow = rows[rowIndex];
-  const newRowOrderIndex = referenceRow.orderIndex + 1;
+  const newRowOrder = referenceRow.order + 1;
   
   const updatedRows = rows.map(row => 
-    row.orderIndex >= newRowOrderIndex ? { ...row, orderIndex: row.orderIndex + 1 } : row
+    row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
   );
   
   // Create cells for each column in the sheet
-  const newCells: { [columnId: string]: Cell } = {};
-  prevData.columns.forEach(column => {
-    newCells[column.id] = {
-      id: Math.random().toString(36).substring(2, 15),
-      columnId: column.id,
-      value: null
-    };
-  });
-  
-  const newRow: Row = {
+  const newCells = prevData.columns.map(column => ({
     id: Math.random().toString(36).substring(2, 15),
-    sheetId: referenceRow.sheetId,
+    columnId: column.id,
+    value: null
+  }));
+  
+  const newRow: SheetRow = {
+    id: Math.random().toString(36).substring(2, 15),
     cells: newCells,
     parentId: referenceRow.parentId,
-    orderIndex: newRowOrderIndex
+    order: newRowOrder
   };
   
   return {
@@ -89,28 +85,24 @@ export const addRowBefore = (prevData: SheetData, rowId: string): SheetData => {
   if (rowIndex === -1) return prevData;
   
   const referenceRow = rows[rowIndex];
-  const newRowOrderIndex = referenceRow.orderIndex;
+  const newRowOrder = referenceRow.order;
   
   const updatedRows = rows.map(row => 
-    row.orderIndex >= newRowOrderIndex ? { ...row, orderIndex: row.orderIndex + 1 } : row
+    row.order >= newRowOrder ? { ...row, order: row.order + 1 } : row
   );
   
   // Create cells for each column in the sheet
-  const newCells: { [columnId: string]: Cell } = {};
-  prevData.columns.forEach(column => {
-    newCells[column.id] = {
-      id: Math.random().toString(36).substring(2, 15),
-      columnId: column.id,
-      value: null
-    };
-  });
-  
-  const newRow: Row = {
+  const newCells = prevData.columns.map(column => ({
     id: Math.random().toString(36).substring(2, 15),
-    sheetId: referenceRow.sheetId,
+    columnId: column.id,
+    value: null
+  }));
+  
+  const newRow: SheetRow = {
+    id: Math.random().toString(36).substring(2, 15),
     cells: newCells,
     parentId: referenceRow.parentId,
-    orderIndex: newRowOrderIndex
+    order: newRowOrder
   };
   
   return {
@@ -136,32 +128,26 @@ export const createGroup = (prevData: SheetData, name: string, rowIds: string[])
   const selectedRows = rows.filter(row => rowIds.includes(row.id));
   if (selectedRows.length === 0) return prevData;
   
-  const minOrderIndex = Math.min(...selectedRows.map(row => row.orderIndex));
+  const minOrder = Math.min(...selectedRows.map(row => row.order));
   
   const updatedRows = rows.map(row => 
-    row.orderIndex >= minOrderIndex ? { ...row, orderIndex: row.orderIndex + 1 } : row
+    row.order >= minOrder ? { ...row, order: row.order + 1 } : row
   );
   
-  // Create group cell for first column
-  const newCells: { [columnId: string]: Cell } = {};
   const groupCell: Cell = {
     id: Math.random().toString(36).substring(2, 15),
     columnId: '',
     value: name
   };
   
-  if (prevData.columns.length > 0) {
-    newCells[prevData.columns[0].id] = groupCell;
-  }
-  
   const groupId = Math.random().toString(36).substring(2, 15);
-  const groupRow: Row = {
+  const groupRow: SheetRow = {
     id: groupId,
-    sheetId: prevData.id,
-    cells: newCells,
+    cells: [groupCell],
     isGroup: true,
+    groupName: name,
     expanded: true,
-    orderIndex: minOrderIndex
+    order: minOrder
   };
   
   const rowsWithParents = updatedRows.map(row => 

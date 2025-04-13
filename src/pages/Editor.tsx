@@ -6,7 +6,7 @@ import SheetEditor from "@/components/SheetEditor/SheetEditor";
 import { getProject, getSheetData, saveSheetData } from "@/services/projectService";
 import { SheetData } from "@/types/sheet";
 import { toast } from "@/components/ui/use-toast";
-import { createEmptySheet } from "@/data/sheetTemplates";
+import { createEmptySheet } from "@/data/defaultTemplates";
 
 const Editor = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -19,12 +19,8 @@ const Editor = () => {
       const projectData = getProject(projectId);
       if (projectData) {
         setProject(projectData);
-        let sheet = getSheetData(projectData.sheetId);
+        const sheet = getSheetData(projectData.sheetId);
         if (sheet) {
-          // Ensure revisions array exists
-          if (!sheet.revisions) {
-            sheet = { ...sheet, revisions: [] };
-          }
           setSheetData(sheet);
         } else {
           // Initialize with empty sheet if none exists

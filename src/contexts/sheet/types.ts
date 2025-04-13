@@ -1,6 +1,5 @@
-
 // src/contexts/sheet/types.ts
-import { SheetData, Row, ColumnDefinition, Cell, SheetRevision } from "@/types/sheet";
+import { SheetData } from "@/types/sheet";
 
 export interface SheetContextType {
   sheetData: SheetData;
@@ -8,16 +7,16 @@ export interface SheetContextType {
   error: Error | null;
   
   // Row operations
-  addRow: (row: Omit<Row, "id">) => void;
-  updateRow: (rowId: string, updatedRow: Partial<Row>) => void;
+  addRow: (row: any) => void;
+  updateRow: (rowId: string, updatedRow: any) => void;
   deleteRow: (rowId: string) => void;
   moveRow: (rowId: string, targetIndex: number) => void;
   addRowAfter: (rowId: string) => void;
   addRowBefore: (rowId: string) => void;
   
   // Column operations
-  addColumn: (column: Omit<ColumnDefinition, "id">) => void;
-  updateColumn: (columnId: string, updatedColumn: Partial<ColumnDefinition>) => void;
+  addColumn: (column: any) => void;
+  updateColumn: (columnId: string, updatedColumn: any) => void;
   deleteColumn: (columnId: string) => void;
   moveColumn: (columnId: string, targetIndex: number) => void;
   

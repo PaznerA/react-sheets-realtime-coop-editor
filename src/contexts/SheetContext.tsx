@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { SheetData, Row, ColumnDefinition } from "@/types/sheet";
+import { SheetData, SheetRow, CellDefinition } from "@/types/sheet";
 import { saveSheetData } from "@/services/projectService";
 import { SheetContextType, SheetProviderProps } from "./sheet/types";
-import { createEmptySheet } from "@/data/sheetTemplates";
+import { createEmptySheet } from "@/data/defaultTemplates";
 
 // Import operations
 import * as rowOps from "./sheet/rowOperations";
@@ -32,16 +31,6 @@ export function SheetProvider({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Zajistíme inicializaci revisions pokud nejsou definovány
-  useEffect(() => {
-    if (!sheetData.revisions) {
-      setSheetData(prevData => ({
-        ...prevData,
-        revisions: []
-      }));
-    }
-  }, []);
-
   useEffect(() => {
     if (sheetId) {
       const saveData = async () => {
@@ -60,11 +49,11 @@ export function SheetProvider({
   }, [sheetData, sheetId]);
 
   // Row operations
-  const addRow = (row: Omit<Row, "id">) => {
+  const addRow = (row: Omit<SheetRow, "id">) => {
     setSheetData(prevData => rowOps.addRow(prevData, row));
   };
 
-  const updateRow = (rowId: string, updatedRow: Partial<Row>) => {
+  const updateRow = (rowId: string, updatedRow: Partial<SheetRow>) => {
     setSheetData(prevData => rowOps.updateRow(prevData, rowId, updatedRow));
   };
 
@@ -98,11 +87,11 @@ export function SheetProvider({
   };
 
   // Column operations
-  const addColumn = (column: Omit<ColumnDefinition, "id">) => {
+  const addColumn = (column: Omit<CellDefinition, "id">) => {
     setSheetData(prevData => columnOps.addColumn(prevData, column));
   };
 
-  const updateColumn = (columnId: string, updatedColumn: Partial<ColumnDefinition>) => {
+  const updateColumn = (columnId: string, updatedColumn: Partial<CellDefinition>) => {
     setSheetData(prevData => columnOps.updateColumn(prevData, columnId, updatedColumn));
   };
 
@@ -126,11 +115,8 @@ export function SheetProvider({
       // setSheetData(updatedSheet);
       
       // Zatím načteme data ručně - později nahradit SpacetimeDB klientem
-      const data = await saveSheetData(sheetId, sheetData);
-      setSheetData(prevSheet => ({
-        ...prevSheet,
-        revisions: prevSheet.revisions || []
-      }));
+      const updatedSheet = await saveSheetData(sheetId, sheetData);
+      setSheetData(updatedSheet);
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
@@ -139,9 +125,11 @@ export function SheetProvider({
   };
 
   // Revision operations
-  const saveRevision = (description: string) => {
+  const createRevision = (description: string) => {
     setSheetData(prevData => revisionOps.createRevision(prevData, description));
   };
+
+  const saveRevision = createRevision;
 
   const loadRevision = (revisionIndex: number) => {
     setSheetData(prevData => revisionOps.loadRevision(prevData, revisionIndex));
@@ -149,7 +137,6 @@ export function SheetProvider({
 
   // Aliases for compatibility
   const toggleGroup = toggleGroupExpanded;
-  const createRevision = saveRevision;
 
   const value = {
     sheetData,

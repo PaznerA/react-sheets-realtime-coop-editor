@@ -10,67 +10,54 @@ export type CellDataType =
   | 'email' 
   | 'date';
 
-// Alias pro CellDefinition pro zachování zpětné kompatibility
-export type ColumnDefinition = {
+export interface ColumnDefinition {
   id: string;
   name: string;
   type: CellDataType;
   width: number;
-  enumId?: string;
+  enumId?: string;    // Reference to an Enum for select/multiselect types
   isReadOnly?: boolean;
   orderIndex: number;
-};
+}
 
-export type Cell = {
+export interface Cell {
   id: string;
   columnId: string;
-  value: any; // Může být string, number, EnumValueId, EnumValueId[], atd.
+  value: any; // Can be string, number, EnumValueId, EnumValueId[], etc.
   format?: string;
-};
+}
 
-export type Row = {
+export interface Row {
   id: string;
   sheetId: string;
-  groupId?: string; // Volitelné - může být prázdné pokud není v žádné skupině
-  orderIndex: number; // Používáme orderIndex místo order pro konzistenci
+  groupId?: string; // Optional - může být prázdný pokud není v žádné skupině
+  orderIndex: number;
   cells: { [columnId: string]: Cell };
   isGroup?: boolean;
   expanded?: boolean;
   parentId?: string;
-};
+}
 
-export type RowGroup = {
+export interface RowGroup {
   id: string;
   sheetId: string;
   name: string;
   orderIndex: number;
   isExpanded: boolean;
-};
+}
 
 // Struktura pro verzování pomocí savepoints
-export type Savepoint = {
+export interface Savepoint {
   id: string;
   sheetId: string;
   createdAt: Date;
   message: string;
   createdByUserId: string;
   timestampAlias?: string; // Uživatelský alias pro jednoduché odkazování (v1.0, v2.1, ...)
-};
+}
 
-// Typ pro revize - používá se interně
-export type SheetRevision = {
-  id: string;
-  timestamp: Date;
-  description: string;
-  rows: Row[];
-};
-
-// Export typů pro zpětnou kompatibilitu
-export type SheetRow = Row;
-export type CellDefinition = ColumnDefinition;
-
-// Rozšířená verze dat sheetu včetně revizí
-export type SheetData = {
+// Rozšířená verze dat sheetu
+export interface SheetData {
   id: string;
   name: string;
   description: string;
@@ -78,11 +65,5 @@ export type SheetData = {
   columns: ColumnDefinition[];
   groups: RowGroup[];
   rows: Row[];
-  revisions: SheetRevision[];
-  currentRevision?: number;
   currentSavepointId?: string; // Aktuální savepoint - pro time-travel
-};
-
-// Export typů pro používání enum hodnot v select/multiselect polích
-export type EnumValueId = string;
-export type EnumValues = EnumValueId[];
+}

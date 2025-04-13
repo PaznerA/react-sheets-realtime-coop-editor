@@ -9,26 +9,21 @@ export const createRevision = (prevData: SheetData, description: string): SheetD
     rows: JSON.parse(JSON.stringify(prevData.rows)),
   };
   
-  // Zajistíme, že revisions existuje
-  const currentRevisions = prevData.revisions || [];
-  
   return {
     ...prevData,
-    revisions: [...currentRevisions, newRevision],
-    currentRevision: currentRevisions.length,
+    revisions: [...prevData.revisions, newRevision],
+    currentRevision: prevData.revisions.length,
   };
 };
 
 export const loadRevision = (prevData: SheetData, revisionIndex: number): SheetData => {
-  const revisions = prevData.revisions || [];
-  
-  if (revisionIndex < 0 || revisionIndex >= revisions.length) {
+  if (revisionIndex < 0 || revisionIndex >= prevData.revisions.length) {
     return prevData;
   }
   
   return {
     ...prevData,
-    rows: JSON.parse(JSON.stringify(revisions[revisionIndex].rows)),
+    rows: JSON.parse(JSON.stringify(prevData.revisions[revisionIndex].rows)),
     currentRevision: revisionIndex,
   };
 };

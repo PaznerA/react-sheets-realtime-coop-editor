@@ -1,8 +1,8 @@
 
-import { SheetData, ColumnDefinition, Cell } from "@/types/sheet";
+import { SheetData, CellDefinition, Cell } from "@/types/sheet";
 
-export const addColumn = (prevData: SheetData, column: Omit<ColumnDefinition, "id">): SheetData => {
-  const newColumn: ColumnDefinition = {
+export const addColumn = (prevData: SheetData, column: Omit<CellDefinition, "id">): SheetData => {
+  const newColumn: CellDefinition = {
     id: Math.random().toString(36).substring(2, 15),
     ...column,
   };
@@ -15,13 +15,9 @@ export const addColumn = (prevData: SheetData, column: Omit<ColumnDefinition, "i
       columnId: newColumn.id,
       value: null,
     };
-    
-    const updatedCells = { ...row.cells };
-    updatedCells[newColumn.id] = newCell;
-    
     return {
       ...row,
-      cells: updatedCells,
+      cells: [...row.cells, newCell],
     };
   });
   
@@ -32,7 +28,7 @@ export const addColumn = (prevData: SheetData, column: Omit<ColumnDefinition, "i
   };
 };
 
-export const updateColumn = (prevData: SheetData, columnId: string, updatedColumn: Partial<ColumnDefinition>): SheetData => {
+export const updateColumn = (prevData: SheetData, columnId: string, updatedColumn: Partial<CellDefinition>): SheetData => {
   return {
     ...prevData,
     columns: prevData.columns.map((column) =>
@@ -44,15 +40,10 @@ export const updateColumn = (prevData: SheetData, columnId: string, updatedColum
 export const deleteColumn = (prevData: SheetData, columnId: string): SheetData => {
   const updatedColumns = prevData.columns.filter((column) => column.id !== columnId);
   
-  const updatedRows = prevData.rows.map((row) => {
-    const updatedCells = { ...row.cells };
-    delete updatedCells[columnId];
-    
-    return {
-      ...row,
-      cells: updatedCells,
-    };
-  });
+  const updatedRows = prevData.rows.map((row) => ({
+    ...row,
+    cells: row.cells.filter((cell) => cell.columnId !== columnId),
+  }));
   
   return {
     ...prevData,
@@ -67,14 +58,8 @@ export const moveColumn = (prevData: SheetData, columnId: string, targetIndex: n
   const [removedColumn] = columns.splice(columnIndex, 1);
   columns.splice(targetIndex, 0, removedColumn);
   
-  // Aktualizujeme orderIndex pro všechny sloupce po přesunu
-  const updatedColumns = columns.map((column, index) => ({
-    ...column,
-    orderIndex: index
-  }));
-  
   return {
     ...prevData,
-    columns: updatedColumns,
+    columns,
   };
 };
