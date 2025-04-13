@@ -5,6 +5,7 @@ export interface Project {
   description: string;
   createdAt: Date;
   updatedAt: Date;
+  sheetId?: string; // Odkaz na primární tabulku projektu, volitelné
 }
 
 // Sheet patřící do projektu

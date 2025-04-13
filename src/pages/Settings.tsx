@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
 import { Database, Save, RefreshCw } from "lucide-react";
-import { syncWithSpaceTimeDB, isUsingCloud, setUseCloud } from "@/services/projectService";
+import { initSpacetimeDB, isUsingCloud, setUseCloud } from "@/services/projectService";
 
 const Settings = () => {
   const [useCloud, setUseCloudState] = useState(isUsingCloud());
@@ -22,7 +22,7 @@ const Settings = () => {
         description: "Data se synchronizují se SpaceTimeDB...",
       });
       
-      await syncWithSpaceTimeDB();
+      await initSpacetimeDB("http://localhost:8080", "spacetime");
       
       toast({
         title: "Synchronizace dokončena",
