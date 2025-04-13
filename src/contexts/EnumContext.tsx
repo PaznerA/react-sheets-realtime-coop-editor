@@ -1,8 +1,8 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Enum, EnumValue, EnumsState } from '@/types/enum';
 import { getSampleEnums } from '@/data/sampleData';
+import { useClient, useIdentity } from '@/module_bindings/client';
 
 interface EnumContextType {
   enums: Enum[];
@@ -15,6 +15,8 @@ interface EnumContextType {
   updateEnumValue: (enumId: string, valueId: string, newValue: string) => void;
   deleteEnumValue: (enumId: string, valueId: string) => void;
   reorderEnumValue: (enumId: string, valueId: string, newOrder: number) => void;
+  loadEnumsForUnit: (unitId: string) => Promise<void>;
+  loading: boolean;
 }
 
 const EnumContext = createContext<EnumContextType | undefined>(undefined);
@@ -27,11 +29,15 @@ export const useEnums = () => {
   return context;
 };
 
+// Legacy storage key - will be removed once we use server-side data
 const STORAGE_KEY = 'sheet-editor-enums';
 
 export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const client = useClient();
+  const identity = useIdentity();
+  const [loading, setLoading] = useState(false);
   const [state, setState] = useState<EnumsState>(() => {
-    // Try to load from localStorage
+    // Try to load from localStorage - legacy support until fully migrated
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -51,24 +57,60 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { enums: getSampleEnums() };
   });
 
-  // Save to localStorage whenever state changes
+  // Legacy - save to localStorage until fully migrated
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Get enum by ID
+  // Load all enums for a unit in a single request
+  const loadEnumsForUnit = async (unitId: string) => {
+    if (!client || !unitId) return;
+    
+    setLoading(true);
+    try {
+      const result = await client.getAllEnumsForUnit(unitId);
+      
+      if (result) {
+        // Transform the data to our internal format
+        const enums = (result.enums as any[]).map(enumItem => {
+          const enumId = enumItem.id;
+          const enumItems = result.enumItems?.[enumId] as any[] || [];
+          
+          return {
+            id: enumId,
+            name: enumItem.name,
+            values: enumItems.map(item => ({
+              id: item.id,
+              value: item.value,
+              label: item.label || item.value,
+              color: item.color,
+              order: item.orderIndex
+            })),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        });
+        
+        setState({ enums });
+      }
+    } catch (error) {
+      console.error('Error loading enums:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getEnum = (id: string) => {
     return state.enums.find(e => e.id === id);
   };
 
-  // Get enum values by enum ID
   const getEnumValues = (enumId: string) => {
     const foundEnum = getEnum(enumId);
     return foundEnum ? foundEnum.values : [];
   };
 
-  // Add new enum
-  const addEnum = (name: string) => {
+  const addEnum = async (name: string) => {
+    // Legacy local state update
     const newEnum: Enum = {
       id: uuidv4(),
       name,
@@ -76,14 +118,24 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    
     setState(prev => ({
       ...prev,
       enums: [...prev.enums, newEnum]
     }));
+    
+    // Server-side update if client and identity exist
+    if (client && identity && identity.activeUnitId) {
+      try {
+        await client.createEnum(identity.activeUnitId, name, '');
+      } catch (error) {
+        console.error('Error creating enum on server:', error);
+      }
+    }
   };
 
-  // Update enum name
-  const updateEnum = (id: string, name: string) => {
+  const updateEnum = async (id: string, name: string) => {
+    // Legacy local state update
     setState(prev => ({
       ...prev,
       enums: prev.enums.map(e => 
@@ -92,27 +144,32 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : e
       )
     }));
+    
+    // TODO: Add server-side update once API is available
   };
 
-  // Delete enum
-  const deleteEnum = (id: string) => {
-    // Prevent deletion of built-in enums
-    if (id === 'nullable-bool' || 
-        id === 'enum-priority' || 
-        id === 'enum-status' || 
-        id === 'enum-requirement-type' || 
-        id === 'enum-test-status') {
-      return;
-    }
+  const deleteEnum = async (id: string) => {
+    // Prevent deletion of special enums
+    if (id === 'nullable-bool') return;
     
+    // Legacy local state update
     setState(prev => ({
       ...prev,
       enums: prev.enums.filter(e => e.id !== id)
     }));
+    
+    // Server-side delete
+    if (client) {
+      try {
+        await client.deleteEnum(id);
+      } catch (error) {
+        console.error('Error deleting enum on server:', error);
+      }
+    }
   };
 
-  // Add new enum value
-  const addEnumValue = (enumId: string, value: string) => {
+  const addEnumValue = async (enumId: string, value: string) => {
+    // Legacy local state update
     setState(prev => ({
       ...prev,
       enums: prev.enums.map(e => {
@@ -130,10 +187,23 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return e;
       })
     }));
+    
+    // Server-side update
+    if (client) {
+      try {
+        const enumData = getEnum(enumId);
+        if (enumData) {
+          const maxOrder = Math.max(-1, ...enumData.values.map(v => v.order));
+          await client.addEnumItem(enumId, value, value, '', maxOrder + 1);
+        }
+      } catch (error) {
+        console.error('Error adding enum value on server:', error);
+      }
+    }
   };
 
-  // Update enum value
-  const updateEnumValue = (enumId: string, valueId: string, newValue: string) => {
+  const updateEnumValue = async (enumId: string, valueId: string, newValue: string) => {
+    // Legacy local state update
     setState(prev => ({
       ...prev,
       enums: prev.enums.map(e => {
@@ -149,10 +219,12 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return e;
       })
     }));
+    
+    // TODO: Add server-side update once API is available
   };
 
-  // Delete enum value
-  const deleteEnumValue = (enumId: string, valueId: string) => {
+  const deleteEnumValue = async (enumId: string, valueId: string) => {
+    // Legacy local state update
     setState(prev => ({
       ...prev,
       enums: prev.enums.map(e => {
@@ -166,10 +238,12 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return e;
       })
     }));
+    
+    // TODO: Add server-side delete once API is available
   };
 
-  // Reorder enum value
-  const reorderEnumValue = (enumId: string, valueId: string, newOrder: number) => {
+  const reorderEnumValue = async (enumId: string, valueId: string, newOrder: number) => {
+    // Legacy local state update
     setState(prev => ({
       ...prev,
       enums: prev.enums.map(e => {
@@ -198,10 +272,12 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return e;
       })
     }));
+    
+    // TODO: Add server-side reorder once API is available
   };
 
-  const value = {
-    enums: state.enums,
+  const contextValue = useMemo(() => ({
+    ...state,
     getEnum,
     getEnumValues,
     addEnum,
@@ -210,8 +286,14 @@ export const EnumProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addEnumValue,
     updateEnumValue,
     deleteEnumValue,
-    reorderEnumValue
-  };
+    reorderEnumValue,
+    loadEnumsForUnit,
+    loading
+  }), [state, loading]);
 
-  return <EnumContext.Provider value={value}>{children}</EnumContext.Provider>;
+  return (
+    <EnumContext.Provider value={contextValue}>
+      {children}
+    </EnumContext.Provider>
+  );
 };

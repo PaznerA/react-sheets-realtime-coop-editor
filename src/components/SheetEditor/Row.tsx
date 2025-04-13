@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Edit, ArrowDown, ArrowUp, FolderPlus, Trash2 } from 'lucide-react';
 import Cell from './Cell';
-import { SheetRow as RowType, CellDefinition } from '@/types/sheet';
+import { Row as RowType, ColumnDefinition, Cell as CellType } from '@/types/sheet';
 import { useSheet } from '@/contexts/SheetContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +15,7 @@ import {
 
 interface RowProps {
   row: RowType;
-  columns: CellDefinition[];
+  columns: ColumnDefinition[];
   level?: number;
   isVisible?: boolean;
   onSelectForGroup?: (rowId: string) => void;
@@ -49,7 +49,9 @@ const Row: React.FC<RowProps> = ({
   };
 
   const isGroup = !!row.isGroup;
-  const groupCell = row.cells.find(cell => !cell.columnId);
+  // Objekt cells je { [columnId: string]: Cell }, takže nemůžeme použít find()
+  // Musíme místo toho hledat položku bez columnId (nebo s prázdným columnId)
+  const groupCell = Object.values(row.cells || {}).find(cell => !(cell as CellType).columnId) as CellType | undefined;
   
   // Indentation for hierarchical display
   const indentPadding = level * 20;
@@ -134,7 +136,7 @@ const Row: React.FC<RowProps> = ({
           }
 
           // Find cell for this column
-          const cell = row.cells.find(c => c.columnId === column.id) || 
+          const cell = row.cells[column.id] || 
                        (isGroup && index === 0 && groupCell) || 
                        { id: `empty_${row.id}_${column.id}`, columnId: column.id, value: null };
 

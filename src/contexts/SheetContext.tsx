@@ -103,6 +103,27 @@ export function SheetProvider({
     setSheetData(prevData => columnOps.moveColumn(prevData, columnId, targetIndex));
   };
 
+  // Refresh data from backend
+  const refreshSheet = async () => {
+    if (!sheetId) return;
+    
+    try {
+      setLoading(true);
+      // V produkci použít SpacetimeDB client
+      // const client = useSpacetime();
+      // const updatedSheet = await client.getSheetData(sheetId);
+      // setSheetData(updatedSheet);
+      
+      // Zatím načteme data ručně - později nahradit SpacetimeDB klientem
+      const updatedSheet = await saveSheetData(sheetId, sheetData);
+      setSheetData(updatedSheet);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Revision operations
   const createRevision = (description: string) => {
     setSheetData(prevData => revisionOps.createRevision(prevData, description));
@@ -137,7 +158,8 @@ export function SheetProvider({
     saveRevision,
     toggleGroup,
     addRowAfter,
-    addRowBefore
+    addRowBefore,
+    refreshSheet
   };
 
   return <SheetContext.Provider value={value}>{children}</SheetContext.Provider>;

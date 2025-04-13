@@ -61,19 +61,20 @@ public static partial class Module
         public long UpdatedAt;
     }
 
-    // Sheet entity
+    // Sheet entity - represents a sheet/grid of data
     [Table(Name = "Sheet", Public = true)]
     public partial class Sheet
     {
         [PrimaryKey]
         public string Id = "";
-        public string ProjectId = ""; // Sheets belong to a project
+        public string ProjectId = "";
         public string Name = "";
         public string Description = "";
-        public string Type = ""; // e.g. "schedule", "budget", "resources", etc.
+        public string Type = ""; // e.g. "task", "resource", "timeline"
+        public string ColumnsJson = ""; // Serialized JSON array of column definitions
         public long CreatedAt;
         public long UpdatedAt;
-        public string ColumnsJson = ""; // Store column definitions as JSON
+        public long LastModified;
     }
     
     // RowGroup entity - groups of rows in a sheet
@@ -135,17 +136,18 @@ public static partial class Module
         public int OrderIndex; // For ordering items in the enum
     }
 
-    // Savepoint entity - for versioning/time-travel
+    // Savepoint entity - reprezentuje uložený stav sheetu
     [Table(Name = "Savepoint", Public = true)]
     public partial class Savepoint
     {
         [PrimaryKey]
         public string Id = "";
         public string SheetId = "";
-        public long CreatedAt;
         public string Message = "";
-        public string CreatedByUserId = "";
-        public string TimestampAlias = ""; // Optional user-friendly alias for the savepoint
+        public string UserId = "";
+        public long CreatedAt;
+        public string RowsSnapshot = ""; // JSON serializace všech rows
+        public string GroupsSnapshot = ""; // JSON serializace všech groups
     }
     
     // Column definition - used in columnsJson
@@ -158,6 +160,32 @@ public static partial class Module
         public string EnumId { get; set; } = ""; // Optional - for enum columns
         public bool IsReadOnly { get; set; }
         public int OrderIndex { get; set; }
+    }
+
+    // Helper class for key-value pairs (replacing Dictionary)
+    [Table(Name = "KeyValuePair", Public = true)]
+    public partial class KeyValueEntry
+    {
+        [PrimaryKey]
+        public string Id = "";
+        public string Category = ""; // For grouping related key-value pairs
+        public string Key = "";
+        public string Value = "";
+    }
+
+    // Result container to store query results
+    [Table(Name = "QueryResult", Public = true)]
+    public partial class QueryResult
+    {
+        [PrimaryKey]
+        public string Id = "";
+        public string QueryId = "";  // ID to identify which query this belongs to
+        public string ResultType = ""; // Type of the result (e.g., "enum", "sheet", "project")
+        public string EntityId = "";  // ID of the related entity
+        public string JsonData = "";  // JSON-serialized data
+        public long CreatedAt;
+        public int StatusCode;
+        public string ErrorMessage;
     }
 
     // ************************
@@ -408,6 +436,7 @@ public static partial class Module
             Type = type,
             CreatedAt = now,
             UpdatedAt = now,
+            LastModified = now,
             ColumnsJson = columnsJson
         };
         
@@ -438,6 +467,7 @@ public static partial class Module
             Type = type,
             CreatedAt = sheet.CreatedAt,
             UpdatedAt = ToTimestamp(System.DateTime.UtcNow),
+            LastModified = ToTimestamp(System.DateTime.UtcNow),
             ColumnsJson = columnsJson
         };
         
@@ -588,25 +618,346 @@ public static partial class Module
     // ************************
 
     [Reducer]
-    public static void CreateSavepoint(ReducerContext ctx, string sheetId, string message, string userId, string timestampAlias)
+    public static void CreateSavepoint(ReducerContext ctx, string sheetId, string message, string userId, string queryId)
     {
-        var id = GenerateId();
-        var now = ToTimestamp(System.DateTime.UtcNow);
-        
-        var savepoint = new Savepoint
+        // Validace vstupních dat
+        if (string.IsNullOrEmpty(sheetId))
         {
-            Id = id,
-            SheetId = sheetId,
-            CreatedAt = now,
-            Message = message,
-            CreatedByUserId = userId,
-            TimestampAlias = timestampAlias
-        };
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "CreateSavepoint",
+                StatusCode = 400,
+                ErrorMessage = "SheetId is required",
+                JsonData = JsonSerializer.Serialize(new { SavepointId = "" })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+            return;
+        }
         
-        ctx.Db.Savepoint.Insert(savepoint);
-        Log.Info($"Created savepoint '{message}' with ID {id} for sheet {sheetId}");
+        // Ověření, že sheet existuje
+        var sheet = ctx.Db.Sheet.Iter().FirstOrDefault(s => s.Id == sheetId);
+        if (sheet == null)
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "CreateSavepoint",
+                StatusCode = 404,
+                ErrorMessage = $"Sheet not found with ID {sheetId}",
+                JsonData = JsonSerializer.Serialize(new { SavepointId = "" })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+            return;
+        }
+        
+        try
+        {
+            // Získání všech řádků a skupin pro tento sheet
+            var rows = new List<Row>();
+            foreach (var row in ctx.Db.Row.Iter())
+            {
+                if (row.SheetId == sheetId)
+                {
+                    rows.Add(row);
+                }
+            }
+            
+            var groups = new List<RowGroup>();
+            foreach (var group in ctx.Db.RowGroup.Iter())
+            {
+                if (group.SheetId == sheetId)
+                {
+                    groups.Add(group);
+                }
+            }
+            
+            // Vytvoření JSON serializace dat
+            var rowsJson = JsonSerializer.Serialize(rows);
+            var groupsJson = JsonSerializer.Serialize(groups);
+            
+            // Vytvoření nového savepoint
+            var savepointId = GenerateId();
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            
+            var savepoint = new Savepoint
+            {
+                Id = savepointId,
+                SheetId = sheetId,
+                Message = message,
+                UserId = userId,
+                CreatedAt = timestamp,
+                RowsSnapshot = rowsJson,
+                GroupsSnapshot = groupsJson
+            };
+            
+            ctx.Db.Savepoint.Insert(savepoint);
+            
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "CreateSavepoint",
+                StatusCode = 200,
+                JsonData = JsonSerializer.Serialize(new { SavepointId = savepointId })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+        }
+        catch (Exception ex)
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "CreateSavepoint",
+                StatusCode = 500,
+                ErrorMessage = $"Failed to create savepoint: {ex.Message}",
+                JsonData = JsonSerializer.Serialize(new { SavepointId = "" })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+        }
     }
     
+    [Reducer]
+    public static void GetSavepoints(ReducerContext ctx, string sheetId, string queryId)
+    {
+        // Validace vstupních dat
+        if (string.IsNullOrEmpty(sheetId))
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "GetSavepoints",
+                StatusCode = 400,
+                ErrorMessage = "SheetId is required",
+                JsonData = JsonSerializer.Serialize(new { Savepoints = new List<object>() })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+            return;
+        }
+        
+        // Ověření, že sheet existuje
+        var sheet = ctx.Db.Sheet.Iter().FirstOrDefault(s => s.Id == sheetId);
+        if (sheet == null)
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "GetSavepoints",
+                StatusCode = 404,
+                ErrorMessage = $"Sheet not found with ID {sheetId}",
+                JsonData = JsonSerializer.Serialize(new { Savepoints = new List<object>() })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+            return;
+        }
+        
+        try
+        {
+            // Získání všech savepointů pro tento sheet
+            var savepoints = new List<Savepoint>();
+            foreach (var savepoint in ctx.Db.Savepoint.Iter())
+            {
+                if (savepoint.SheetId == sheetId)
+                {
+                    savepoints.Add(savepoint);
+                }
+            }
+            
+            // Seřazení savepointů podle data vytvoření (nejnovější první)
+            savepoints = savepoints.OrderByDescending(s => s.CreatedAt).ToList();
+            
+            // Odstranění velkých JSON dat z odpovědi (šetří přenosovou kapacitu)
+            var lightSavepoints = savepoints.Select(s => new
+            {
+                s.Id,
+                s.SheetId,
+                s.CreatedAt,
+                s.Message,
+                s.UserId
+            }).ToList();
+            
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "GetSavepoints",
+                StatusCode = 200,
+                JsonData = JsonSerializer.Serialize(new { Savepoints = lightSavepoints })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+        }
+        catch (Exception ex)
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "GetSavepoints",
+                StatusCode = 500,
+                ErrorMessage = $"Failed to get savepoints: {ex.Message}",
+                JsonData = JsonSerializer.Serialize(new { Savepoints = new List<object>() })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+        }
+    }
+    
+    [Reducer]
+    public static void RevertToSavepoint(ReducerContext ctx, string savepointId, string queryId)
+    {
+        // Validace vstupních dat
+        if (string.IsNullOrEmpty(savepointId))
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "RevertToSavepoint",
+                StatusCode = 400,
+                ErrorMessage = "SavepointId is required",
+                JsonData = "{}"
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+            return;
+        }
+        
+        // Ověření, že savepoint existuje
+        var savepoint = ctx.Db.Savepoint.Iter().FirstOrDefault(s => s.Id == savepointId);
+        if (savepoint == null)
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "RevertToSavepoint",
+                StatusCode = 404,
+                ErrorMessage = $"Savepoint not found with ID {savepointId}",
+                JsonData = "{}"
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+            return;
+        }
+        
+        try
+        {
+            // Smazat všechny existující řádky v sheetu
+            var rowsToDelete = new List<Row>();
+            foreach (var row in ctx.Db.Row.Iter())
+            {
+                if (row.SheetId == savepoint.SheetId)
+                {
+                    rowsToDelete.Add(row);
+                }
+            }
+            
+            foreach (var row in rowsToDelete)
+            {
+                ctx.Db.Row.Delete(row);
+            }
+            
+            // Smazat všechny existující skupiny v sheetu
+            var groupsToDelete = new List<RowGroup>();
+            foreach (var group in ctx.Db.RowGroup.Iter())
+            {
+                if (group.SheetId == savepoint.SheetId)
+                {
+                    groupsToDelete.Add(group);
+                }
+            }
+            
+            foreach (var group in groupsToDelete)
+            {
+                ctx.Db.RowGroup.Delete(group);
+            }
+            
+            // Deserializovat uložená data
+            var restoredRows = JsonSerializer.Deserialize<List<Row>>(savepoint.RowsSnapshot);
+            var restoredGroups = JsonSerializer.Deserialize<List<RowGroup>>(savepoint.GroupsSnapshot);
+            
+            // Vložit řádky a skupiny zpět do databáze
+            if (restoredRows != null)
+            {
+                foreach (var row in restoredRows)
+                {
+                    ctx.Db.Row.Insert(row);
+                }
+            }
+            
+            if (restoredGroups != null)
+            {
+                foreach (var group in restoredGroups)
+                {
+                    ctx.Db.RowGroup.Insert(group);
+                }
+            }
+            
+            // Aktualizovat sheet (last modified atd.)
+            var sheet = ctx.Db.Sheet.Iter().FirstOrDefault(s => s.Id == savepoint.SheetId);
+            if (sheet != null)
+            {
+                // Musíme vytvořit novou instanci sheetu a přiřadit všechny hodnoty
+                // Plus aktualizovat čas úpravy
+                var updatedSheet = new Sheet
+                {
+                    Id = sheet.Id,
+                    ProjectId = sheet.ProjectId,
+                    Name = sheet.Name,
+                    Description = sheet.Description,
+                    Type = sheet.Type,
+                    ColumnsJson = sheet.ColumnsJson,
+                    CreatedAt = sheet.CreatedAt,
+                    UpdatedAt = sheet.UpdatedAt,
+                    LastModified = ToTimestamp(System.DateTime.UtcNow)
+                };
+                
+                // Smazat původní sheet
+                ctx.Db.Sheet.Delete(sheet);
+                
+                // Vložit aktualizovaný sheet
+                ctx.Db.Sheet.Insert(updatedSheet);
+            }
+            
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "RevertToSavepoint",
+                StatusCode = 200,
+                JsonData = JsonSerializer.Serialize(new { Success = true })
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+        }
+        catch (Exception ex)
+        {
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "RevertToSavepoint",
+                StatusCode = 500,
+                ErrorMessage = $"Failed to revert to savepoint: {ex.Message}",
+                JsonData = "{}"
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+        }
+    }
+
     // ************************
     // * ENUM REDUCERS       *
     // ************************
@@ -644,36 +995,483 @@ public static partial class Module
         };
         
         ctx.Db.EnumItem.Insert(enumItem);
-        Log.Info($"Added item {label} to enum {enumId}");
+        Log.Info($"Added enum item {value} with ID {id} to enum {enumId}");
     }
-
+    
     [Reducer]
     public static void DeleteEnum(ReducerContext ctx, string id)
     {
-        var enumObj = ctx.Db.Enum.Iter().FirstOrDefault(e => e.Id == id);
-        if (enumObj == null)
+        var enumEntity = ctx.Db.Enum.Iter().FirstOrDefault(e => e.Id == id);
+        if (enumEntity == null)
         {
             Log.Error($"Enum not found with ID {id}");
             return;
         }
-
-        // First delete all enum items
-        var enumItemsToDelete = new List<EnumItem>();
-        foreach (var enumItem in ctx.Db.EnumItem.Iter())
+        
+        // First delete all items in this enum
+        var itemsToDelete = new List<EnumItem>();
+        foreach (var item in ctx.Db.EnumItem.Iter())
         {
-            if (enumItem.EnumId == id)
+            if (item.EnumId == id)
             {
-                enumItemsToDelete.Add(enumItem);
+                itemsToDelete.Add(item);
             }
         }
-
-        foreach (var enumItem in enumItemsToDelete)
+        
+        foreach (var item in itemsToDelete)
         {
-            ctx.Db.EnumItem.Delete(enumItem);
+            ctx.Db.EnumItem.Delete(item);
         }
-
+        
         // Now delete the enum
-        ctx.Db.Enum.Delete(enumObj);
-        Log.Info($"Deleted enum with ID {id} and all its items");
+        ctx.Db.Enum.Delete(enumEntity);
+        Log.Info($"Deleted enum with ID {id} and {itemsToDelete.Count} items");
+    }
+
+    // ************************
+    // * OPTIMIZED REDUCERS  *
+    // ************************
+
+    // Optimized reducer to get all enum options without multiple round trips
+    [Reducer]
+    public static void GetEnumOptions(ReducerContext ctx, string enumId, string queryId)
+    {
+        // Find enum by ID
+        var enumData = ctx.Db.Enum.Iter().FirstOrDefault(e => e.Id == enumId);
+        if (enumData == null) return;
+        
+        // Delete any previous results for this query
+        var oldResults = ctx.Db.QueryResult.Iter()
+            .Where(r => r.QueryId == queryId)
+            .ToList();
+        
+        foreach (var oldResult in oldResults)
+        {
+            ctx.Db.QueryResult.Delete(oldResult);
+        }
+        
+        // Get all items for this enum and serialize to JSON
+        var items = ctx.Db.EnumItem.Iter()
+            .Where(item => item.EnumId == enumId)
+            .OrderBy(item => item.OrderIndex)
+            .Select(item => new 
+            {
+                id = item.Id,
+                value = item.Value,
+                label = item.Label,
+                color = item.Color
+            })
+            .ToList();
+        
+        var jsonData = JsonSerializer.Serialize(items);
+        
+        // Store the result
+        var result = new QueryResult
+        {
+            Id = GenerateId(),
+            QueryId = queryId,
+            ResultType = "enum_options",
+            EntityId = enumId,
+            JsonData = jsonData,
+            CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+        };
+        
+        ctx.Db.QueryResult.Insert(result);
+        Log.Info($"Generated enum options for enum {enumId} with query ID {queryId}");
+    }
+
+    // Get all enums for a unit in a single request to reduce traffic
+    [Reducer]
+    public static void GetAllEnumsForUnit(ReducerContext ctx, string unitId, string queryId)
+    {
+        // Delete any previous results for this query
+        var oldResults = ctx.Db.QueryResult.Iter()
+            .Where(r => r.QueryId == queryId)
+            .ToList();
+        
+        foreach (var oldResult in oldResults)
+        {
+            ctx.Db.QueryResult.Delete(oldResult);
+        }
+        
+        // Get all enums in the unit
+        var enums = ctx.Db.Enum.Iter()
+            .Where(e => e.UnitId == unitId)
+            .Select(e => new
+            {
+                id = e.Id,
+                name = e.Name,
+                description = e.Description
+            })
+            .ToList();
+        
+        // Store the enums result
+        var enumsResult = new QueryResult
+        {
+            Id = GenerateId(),
+            QueryId = queryId,
+            ResultType = "enums_list",
+            EntityId = unitId,
+            JsonData = JsonSerializer.Serialize(enums),
+            CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+        };
+        
+        ctx.Db.QueryResult.Insert(enumsResult);
+        
+        // Get all enum items for all enums in this unit
+        foreach (var enumEntity in ctx.Db.Enum.Iter().Where(e => e.UnitId == unitId))
+        {
+            var items = ctx.Db.EnumItem.Iter()
+                .Where(item => item.EnumId == enumEntity.Id)
+                .OrderBy(item => item.OrderIndex)
+                .Select(item => new 
+                {
+                    id = item.Id,
+                    value = item.Value,
+                    label = item.Label,
+                    color = item.Color
+                })
+                .ToList();
+            
+            // Store the enum items result
+            var itemsResult = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "enum_items",
+                EntityId = enumEntity.Id,
+                JsonData = JsonSerializer.Serialize(items),
+                CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+            };
+            
+            ctx.Db.QueryResult.Insert(itemsResult);
+        }
+        
+        Log.Info($"Generated all enums data for unit {unitId} with query ID {queryId}");
+    }
+
+    // Bulk update cells to reduce network traffic
+    [Reducer]
+    public static void UpdateMultipleCells(ReducerContext ctx, string cellUpdatesJson)
+    {
+        int updatedCount = 0;
+        
+        try
+        {
+            // Parse the JSON data
+            var updates = JsonSerializer.Deserialize<List<CellUpdate>>(cellUpdatesJson);
+            
+            if (updates == null)
+            {
+                Log.Error("Failed to parse cell updates JSON");
+                return;
+            }
+            
+            foreach (var update in updates)
+            {
+                if (string.IsNullOrEmpty(update.RowId) || 
+                    string.IsNullOrEmpty(update.ColumnId) ||
+                    update.Value == null)
+                {
+                    continue;
+                }
+                
+                // Find existing cell or create new
+                var existingCell = ctx.Db.Cell.Iter().FirstOrDefault(c => c.RowId == update.RowId && c.ColumnId == update.ColumnId);
+                
+                if (existingCell != null)
+                {
+                    // Remove old cell
+                    ctx.Db.Cell.Delete(existingCell);
+                    
+                    // Insert updated cell
+                    var updatedCell = new Cell
+                    {
+                        Id = existingCell.Id,
+                        RowId = update.RowId,
+                        ColumnId = update.ColumnId,
+                        Value = update.Value,
+                        Format = update.Format ?? ""
+                    };
+                    
+                    ctx.Db.Cell.Insert(updatedCell);
+                }
+                else
+                {
+                    // Create new cell
+                    var newCell = new Cell
+                    {
+                        Id = GenerateId(),
+                        RowId = update.RowId,
+                        ColumnId = update.ColumnId,
+                        Value = update.Value,
+                        Format = update.Format ?? ""
+                    };
+                    
+                    ctx.Db.Cell.Insert(newCell);
+                }
+                
+                updatedCount++;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Error updating cells: {ex.Message}");
+            return;
+        }
+        
+        Log.Info($"Bulk updated {updatedCount} cells");
+    }
+    
+    // Helper class for cell updates
+    public class CellUpdate
+    {
+        public string RowId { get; set; } = "";
+        public string ColumnId { get; set; } = "";
+        public string Value { get; set; } = "";
+        public string? Format { get; set; }
+    }
+
+    // Generate project list with data from sheets
+    [Reducer]
+    public static void GetProjectList(ReducerContext ctx, string unitId, string sheetIdsJson, string columnMappingJson, string queryId)
+    {
+        // Delete any previous results for this query
+        var oldResults = ctx.Db.QueryResult.Iter()
+            .Where(r => r.QueryId == queryId)
+            .ToList();
+        
+        foreach (var oldResult in oldResults)
+        {
+            ctx.Db.QueryResult.Delete(oldResult);
+        }
+        
+        try
+        {
+            // Parse JSON inputs
+            var sheetIds = JsonSerializer.Deserialize<List<string>>(sheetIdsJson) ?? new List<string>();
+            var columnMappings = JsonSerializer.Deserialize<List<KeyValueMapping>>(columnMappingJson) ?? new List<KeyValueMapping>();
+            
+            // Get all projects in the unit
+            var projects = ctx.Db.Project.Iter()
+                .Where(p => p.UnitId == unitId)
+                .OrderBy(p => p.Name)
+                .ToList();
+            
+            var projectsData = new List<object>();
+            
+            foreach (var project in projects)
+            {
+                var projectData = new Dictionary<string, object>
+                {
+                    { "id", project.Id },
+                    { "name", project.Name },
+                    { "description", project.Description },
+                    { "createdAt", project.CreatedAt },
+                    { "updatedAt", project.UpdatedAt }
+                };
+                
+                // For each sheet in the project that we want to include
+                foreach (var sheetId in sheetIds)
+                {
+                    var sheet = ctx.Db.Sheet.Iter().FirstOrDefault(s => s.ProjectId == project.Id && s.Id == sheetId);
+                    if (sheet == null) continue;
+                    
+                    // Get rows and cells
+                    var rows = ctx.Db.Row.Iter().Where(r => r.SheetId == sheet.Id).ToList();
+                    
+                    foreach (var mapping in columnMappings)
+                    {
+                        var columnId = mapping.Key;
+                        var outputField = mapping.Value;
+                        
+                        // Find cells with the required columnId
+                        foreach (var row in rows)
+                        {
+                            var cell = ctx.Db.Cell.Iter().FirstOrDefault(c => c.RowId == row.Id && c.ColumnId == columnId);
+                            if (cell != null)
+                            {
+                                projectData[outputField] = cell.Value;
+                                break; // Find first occurrence
+                            }
+                        }
+                    }
+                }
+                
+                projectsData.Add(projectData);
+            }
+            
+            // Store the result
+            var result = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "project_list",
+                EntityId = unitId,
+                JsonData = JsonSerializer.Serialize(projectsData),
+                CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+            };
+            
+            ctx.Db.QueryResult.Insert(result);
+            Log.Info($"Generated project list for unit {unitId} with query ID {queryId}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Error generating project list: {ex.Message}");
+        }
+    }
+    
+    // Helper class for key-value mappings
+    public class KeyValueMapping
+    {
+        public string Key { get; set; } = "";
+        public string Value { get; set; } = "";
+    }
+
+    // Get all data for a sheet in one go to reduce multiple requests
+    [Reducer]
+    public static void GetSheetData(ReducerContext ctx, string sheetId, string queryId)
+    {
+        // Delete any previous results for this query
+        var oldResults = ctx.Db.QueryResult.Iter()
+            .Where(r => r.QueryId == queryId)
+            .ToList();
+        
+        foreach (var oldResult in oldResults)
+        {
+            ctx.Db.QueryResult.Delete(oldResult);
+        }
+        
+        // Get the sheet
+        var sheet = ctx.Db.Sheet.Iter().FirstOrDefault(s => s.Id == sheetId);
+        if (sheet == null)
+        {
+            Log.Error($"Sheet not found with ID {sheetId}");
+            return;
+        }
+        
+        try
+        {
+            // Basic sheet info
+            var sheetData = new Dictionary<string, object>
+            {
+                { "id", sheet.Id },
+                { "name", sheet.Name },
+                { "description", sheet.Description },
+                { "type", sheet.Type }
+            };
+            
+            // Parse columns from JSON
+            try
+            {
+                var columns = JsonSerializer.Deserialize<List<ColumnDefinition>>(sheet.ColumnsJson);
+                sheetData["columns"] = columns ?? new List<ColumnDefinition>();
+            }
+            catch
+            {
+                sheetData["columns"] = new List<ColumnDefinition>();
+            }
+            
+            // Store the sheet data
+            var sheetResult = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "sheet_data",
+                EntityId = sheetId,
+                JsonData = JsonSerializer.Serialize(sheetData),
+                CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+            };
+            
+            ctx.Db.QueryResult.Insert(sheetResult);
+            
+            // Get row groups
+            var groups = ctx.Db.RowGroup.Iter()
+                .Where(g => g.SheetId == sheetId)
+                .OrderBy(g => g.OrderIndex)
+                .Select(g => new
+                {
+                    id = g.Id,
+                    name = g.Name,
+                    orderIndex = g.OrderIndex,
+                    isExpanded = g.IsExpanded
+                })
+                .ToList();
+            
+            // Store the groups
+            var groupsResult = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "sheet_groups",
+                EntityId = sheetId,
+                JsonData = JsonSerializer.Serialize(groups),
+                CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+            };
+            
+            ctx.Db.QueryResult.Insert(groupsResult);
+            
+            // Get rows
+            var rows = ctx.Db.Row.Iter()
+                .Where(r => r.SheetId == sheetId)
+                .OrderBy(r => r.OrderIndex)
+                .Select(r => new
+                {
+                    id = r.Id,
+                    groupId = r.GroupId,
+                    orderIndex = r.OrderIndex
+                })
+                .ToList();
+            
+            // Store the rows
+            var rowsResult = new QueryResult
+            {
+                Id = GenerateId(),
+                QueryId = queryId,
+                ResultType = "sheet_rows",
+                EntityId = sheetId,
+                JsonData = JsonSerializer.Serialize(rows),
+                CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+            };
+            
+            ctx.Db.QueryResult.Insert(rowsResult);
+            
+            // Get all cells for this sheet
+            foreach (var row in ctx.Db.Row.Iter().Where(r => r.SheetId == sheetId))
+            {
+                var cells = ctx.Db.Cell.Iter()
+                    .Where(c => c.RowId == row.Id)
+                    .Select(c => new
+                    {
+                        id = c.Id,
+                        columnId = c.ColumnId,
+                        value = c.Value,
+                        format = c.Format
+                    })
+                    .ToList();
+                
+                if (cells.Count > 0)
+                {
+                    // Store the cells for this row
+                    var cellsResult = new QueryResult
+                    {
+                        Id = GenerateId(),
+                        QueryId = queryId,
+                        ResultType = "row_cells",
+                        EntityId = row.Id, // Use row ID as entity ID
+                        JsonData = JsonSerializer.Serialize(cells),
+                        CreatedAt = ToTimestamp(System.DateTime.UtcNow)
+                    };
+                    
+                    ctx.Db.QueryResult.Insert(cellsResult);
+                }
+            }
+            
+            Log.Info($"Generated all sheet data for sheet {sheetId} with query ID {queryId}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Error getting sheet data: {ex.Message}");
+        }
     }
 }
