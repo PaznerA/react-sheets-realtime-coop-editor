@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Cell as CellType, CellDefinition } from '@/types/sheet';
+import { Cell as CellType, ColumnDefinition } from '@/types/sheet';
 import { useEnums } from '@/contexts/EnumContext';
 import TextDisplay from './DisplayComponents/TextDisplay';
 import DateDisplay from './DisplayComponents/DateDisplay';
@@ -15,7 +14,7 @@ import UserInput from './InputComponents/UserInput';
 
 interface CellEditorProps {
   cell: CellType;
-  column: CellDefinition;
+  column: ColumnDefinition;
   isEditing: boolean;
   onStartEdit: () => void;
   onFinishEdit: (value: string | number | string[] | null) => void;
@@ -36,11 +35,10 @@ const CellEditor: React.FC<CellEditorProps> = ({
     }
   };
 
-  // Ensure column.options is always an array
-  const safeOptions = Array.isArray(column.options) ? column.options : [];
-
+  // Držet default prázdné pole
+  let options: string[] = [];
+  
   // If enumId is provided, use its values instead of options
-  let options = safeOptions;
   if (column.enumId) {
     const enumData = getEnum(column.enumId);
     if (enumData) {
@@ -55,13 +53,13 @@ const CellEditor: React.FC<CellEditorProps> = ({
       switch (column.type) {
         case 'int':
           return <NumberInput 
-            value={cell.value as number}
+            value={cell.value ? Number(cell.value) : 0}
             onValueChange={onFinishEdit}
             integer={true}
           />;
         case 'float':
           return <NumberInput 
-            value={cell.value as number}
+            value={cell.value ? Number(cell.value) : 0}
             onValueChange={onFinishEdit}
             integer={false}
           />;
