@@ -18,10 +18,17 @@ const Cell: React.FC<CellProps> = ({
   onStartEdit, 
   onFinishEdit 
 }) => {
-  // Make sure cell is a valid object before passing it to CellEditor
-  if (!cell) {
-    console.error('Cell is undefined', { column });
-    return <div className="p-2 h-full">-</div>;
+  // If cell is undefined or invalid, render a placeholder
+  if (!cell || !cell.id) {
+    console.warn('Cell is undefined or invalid', { column, cellData: cell });
+    return (
+      <div 
+        className="p-2 h-full border-r border-b border-sheet-border"
+        onClick={onStartEdit}
+      >
+        -
+      </div>
+    );
   }
 
   // Pass through to the CellEditor component

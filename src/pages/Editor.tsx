@@ -19,8 +19,12 @@ const Editor = () => {
       const projectData = getProject(projectId);
       if (projectData) {
         setProject(projectData);
-        const sheet = getSheetData(projectData.sheetId);
+        let sheet = getSheetData(projectData.sheetId);
         if (sheet) {
+          // Ensure revisions array exists
+          if (!sheet.revisions) {
+            sheet = { ...sheet, revisions: [] };
+          }
           setSheetData(sheet);
         } else {
           // Initialize with empty sheet if none exists

@@ -1,6 +1,22 @@
 
 import { SheetData, ColumnDefinition, RowGroup } from "@/types/sheet";
 
+// Export templates array for template selector
+export const templates = [
+  {
+    id: "default",
+    name: "Výchozí tabulka",
+    description: "Univerzální tabulka pro správu dat",
+    data: createDefaultSheet()
+  },
+  {
+    id: "tasks",
+    name: "Seznam úkolů",
+    description: "Tabulka pro sledování a správu úkolů",
+    data: createTaskSheet()
+  }
+];
+
 export const createDefaultSheet = (name = "Default Sheet"): SheetData => {
   return {
     id: Math.random().toString(36).substring(2, 15),
