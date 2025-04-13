@@ -64,8 +64,15 @@ const RevisionPanel: React.FC = () => {
       
       if (client) {
         const result = await client.getSavepoints(sheetData.id);
-        setSavepoints(result.savepoints);
-        setCurrentSavepointId(result.currentSavepointId);
+        
+        // Ensure result and result.savepoints exist before setting state
+        if (result && result.savepoints) {
+          setSavepoints(result.savepoints);
+          setCurrentSavepointId(result.currentSavepointId || '');
+        } else {
+          console.warn('No savepoints returned from SpacetimeDB');
+          setSavepoints([]);
+        }
       } else {
         // Fallback to local revisions if SpacetimeDB is not available
         const revisions = sheetData.revisions || [];
@@ -87,6 +94,7 @@ const RevisionPanel: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load savepoints:', error);
+      setSavepoints([]); // Ensure savepoints is an empty array on error
       toast({
         title: "Chyba",
         description: "Nepodařilo se načíst revize",
@@ -234,7 +242,7 @@ const RevisionPanel: React.FC = () => {
               
               {loading ? (
                 <div className="py-4 text-center">Načítání...</div>
-              ) : savepoints.length === 0 ? (
+              ) : !savepoints || savepoints.length === 0 ? (
                 <p className="text-sm text-gray-500">Zatím nebyly uloženy žádné revize.</p>
               ) : (
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">

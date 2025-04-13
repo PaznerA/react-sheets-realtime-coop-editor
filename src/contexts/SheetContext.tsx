@@ -128,6 +128,7 @@ export function SheetProvider({
       // Zatím načteme data ručně - později nahradit SpacetimeDB klientem
       const updatedSheet = await saveSheetData(sheetId, sheetData);
       setSheetData(prevSheet => ({
+        ...prevSheet,
         ...updatedSheet,
         revisions: prevSheet.revisions || []
       }));

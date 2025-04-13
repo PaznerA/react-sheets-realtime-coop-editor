@@ -19,19 +19,16 @@ import { SPACETIME_CONFIG } from "./config/spaceTimeConfig";
 
 const queryClient = new QueryClient();
 
-// Konfigurace pro SpacetimeDB
+// Konfigurace pro SpacetimeDB - použití defaultních hodnot, pokud konfigurace chybí
 const spacetimeConfig = {
-  host: SPACETIME_CONFIG.HOST || "localhost",
-  port: SPACETIME_CONFIG.PORT || 8080,
-  namespace: SPACETIME_CONFIG.MODULE_NAME || "spacetime-sheets"
+  host: "localhost",
+  port: 8080,
+  namespace: "spacetime-sheets"
 };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <SpacetimeProvider
-      host={`http://${spacetimeConfig.host}:${spacetimeConfig.port}`}
-      namespace={spacetimeConfig.namespace}
-    >
+    <SpacetimeProvider>
       <TooltipProvider>
         <EnumProvider>
           <Toaster />
