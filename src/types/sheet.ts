@@ -1,4 +1,3 @@
-
 export type CellDataType = 
   | 'text' 
   | 'int' 
@@ -10,42 +9,76 @@ export type CellDataType =
   | 'email' 
   | 'date';
 
-export interface CellDefinition {
+export interface ColumnDefinition {
   id: string;
   name: string;
   type: CellDataType;
-  required?: boolean;
-  options?: string[]; // For select/multiselect types
+  width: number;
   enumId?: string;    // Reference to an Enum for select/multiselect types
-  validation?: RegExp | string; // For validation rules (email, etc.)
+  isReadOnly?: boolean;
+  orderIndex: number;
 }
 
 export interface Cell {
   id: string;
-  value: string | number | string[] | null;
+  rowId: string;
   columnId: string;
+  value: string;
+  format?: string;
 }
 
-export interface SheetRow {
+export interface Row {
   id: string;
-  cells: Cell[];
-  isGroup?: boolean;
-  groupName?: string;
-  parentId?: string | null;
-  expanded?: boolean;
-  order: number;
+  sheetId: string;
+  groupId?: string; // Optional - může být prázdný pokud není v žádné skupině
+  orderIndex: number;
+  cells: { [columnId: string]: Cell };
 }
 
-export interface SheetRevision {
+export interface RowGroup {
   id: string;
-  timestamp: Date;
+  sheetId: string;
+  name: string;
+  orderIndex: number;
+  isExpanded: boolean;
+}
+
+// Interface pro Enum (výběrový seznam)
+export interface Enum {
+  id: string;
+  unitId: string;
+  name: string;
   description: string;
-  rows: SheetRow[];
+  items: EnumItem[];
 }
 
+export interface EnumItem {
+  id: string;
+  enumId: string;
+  value: string;
+  label: string;
+  color?: string;
+  orderIndex: number;
+}
+
+// Struktura pro verzování pomocí savepoints
+export interface Savepoint {
+  id: string;
+  sheetId: string;
+  createdAt: Date;
+  message: string;
+  createdByUserId: string;
+  timestampAlias?: string; // Uživatelský alias pro jednoduché odkazování (v1.0, v2.1, ...)
+}
+
+// Rozšířená verze dat sheetu - nahrazuje starou SheetData
 export interface SheetData {
-  columns: CellDefinition[];
-  rows: SheetRow[];
-  revisions: SheetRevision[];
-  currentRevision: number;
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  columns: ColumnDefinition[];
+  groups: RowGroup[];
+  rows: Row[];
+  currentSavepointId?: string; // Aktuální savepoint - pro time-travel
 }
