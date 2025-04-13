@@ -36,6 +36,65 @@ const CellEditor: React.FC<CellEditorProps> = ({
     }
   };
 
+  // Convert raw enum value to display options
+  const getEnumOptions = () => {
+    if (!column.enumId) return [];
+    
+    const enumData = getEnum(column.enumId);
+    if (!enumData) return [];
+    
+    return enumData.values.map(v => ({
+      id: v.id,
+      label: v.label || v.value,
+      value: v.id, // Use ID as the value for proper identification
+    }));
+  };
+  
+  // Get current value from the cell in the proper format
+  const getCurrentEnumValue = () => {
+    if (!cell.value) {
+      return column.type === 'multiselect' ? [] : null;
+    }
+    
+    try {
+      // Handle both string and array formats depending on the column type
+      if (column.type === 'multiselect') {
+        return typeof cell.value === 'string' 
+          ? JSON.parse(cell.value) 
+          : Array.isArray(cell.value) ? cell.value : [];
+      } else {
+        // For single select, just return the value directly
+        return cell.value;
+      }
+    } catch (e) {
+      console.error("Error parsing enum value:", e);
+      return column.type === 'multiselect' ? [] : null;
+    }
+  };
+  
+  // Convert enum ID(s) to display value(s)
+  const getEnumDisplayValue = (value: EnumValueId | EnumValues) => {
+    if (!column.enumId || !value) {
+      return Array.isArray(value) ? [] : '';
+    }
+    
+    const enumData = getEnum(column.enumId);
+    if (!enumData) return Array.isArray(value) ? [] : '';
+    
+    // Create a map for quick lookup
+    const valueMap = new Map(
+      enumData.values.map(v => [v.id, v.label || v.value])
+    );
+    
+    if (Array.isArray(value)) {
+      // For multiselect, return array of display values
+      return value.map(id => valueMap.get(id) || '');
+    } else {
+      // For single select, return single display value
+      return valueMap.get(value) || '';
+    }
+  };
+
 <<<<<<< HEAD
   // Držet default prázdné pole
   let options: string[] = [];
