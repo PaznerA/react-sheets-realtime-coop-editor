@@ -131,3 +131,21 @@
 .table-bosch tr:hover {
   @apply bg-sheet-highlight;
 }
+
+/* Sheet Editor specific styles */
+.sheet-cell {
+  @apply box-border;
+  min-width: 0;
+}
+
+.sheet-cell-editing,
+.sheet-cell-display {
+  @apply w-full h-full;
+  min-width: 0;
+}
+
+/* Apply this to inputs in edit mode to prevent width changes */
+.sheet-input {
+  @apply w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0;
+  box-sizing: border-box;
+}

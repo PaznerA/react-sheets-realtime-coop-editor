@@ -15,6 +15,8 @@ const UserInput: React.FC<UserInputProps> = ({ value, onValueChange }) => {
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
+      // Select all text when starting edit
+      inputRef.current.select();
     }
   }, []);
 
@@ -35,7 +37,7 @@ const UserInput: React.FC<UserInputProps> = ({ value, onValueChange }) => {
   };
 
   return (
-    <div className="flex items-center h-8 px-2 border rounded w-full">
+    <div className="flex items-center h-8 w-full">
       <User className="h-4 w-4 mr-2 shrink-0" />
       <Input
         ref={inputRef}
@@ -43,7 +45,7 @@ const UserInput: React.FC<UserInputProps> = ({ value, onValueChange }) => {
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-7 p-0 w-full min-w-[calc(100%-2rem)]"
+        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-7 p-0 w-full"
       />
     </div>
   );

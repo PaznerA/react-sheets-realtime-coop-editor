@@ -14,6 +14,8 @@ const TextInput: React.FC<TextInputProps> = ({ value, onValueChange }) => {
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
+      // Select all text when starting edit
+      inputRef.current.select();
     }
   }, []);
 
@@ -40,7 +42,7 @@ const TextInput: React.FC<TextInputProps> = ({ value, onValueChange }) => {
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className="h-8 py-1 w-full min-w-[100%]"
+      className="h-8 py-1 w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
     />
   );
 };

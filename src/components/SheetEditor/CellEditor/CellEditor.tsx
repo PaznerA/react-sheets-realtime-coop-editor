@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Cell as CellType, ColumnDefinition } from '@/types/sheet';
 import { useEnums } from '@/contexts/EnumContext';
@@ -156,9 +157,7 @@ const CellEditor: React.FC<CellEditorProps> = ({
 
   return (
     <div 
-      className={`w-full h-full min-h-[32px] px-2 flex items-center ${
-        isEditing ? '' : 'cursor-cell'
-      }`}
+      className="w-full h-full min-h-[32px] px-2 flex items-center cursor-cell"
       onDoubleClick={handleDblClick}
     >
       {renderEditor()}

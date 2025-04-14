@@ -11,12 +11,12 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ columns }) => {
   const { getEnum } = useEnums();
   
   return (
-    <div className="flex border-b border-sheet-border bg-sheet-header font-semibold text-gray-700 overflow-hidden">
+    <div className="flex border-b border-sheet-border bg-sheet-header font-semibold text-gray-700 overflow-hidden sticky top-0 z-10">
       {/* Row controls column */}
       <div className="min-w-[40px] w-10 shrink-0 border-r border-sheet-border"></div>
       
       {/* Column headers */}
-      <div className="flex-1 grid overflow-x-auto" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
+      <div className="flex-1 grid grid-flow-col auto-cols-fr overflow-x-auto" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
         {columns.map((column) => {
           // Get enum name if the column is linked to an enum
           let typeInfo = column.type;
@@ -30,7 +30,7 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ columns }) => {
           }
           
           return (
-            <div key={column.id} className="px-2 py-2 border-r border-sheet-border whitespace-nowrap">
+            <div key={column.id} className="px-2 py-2 border-r border-sheet-border whitespace-nowrap overflow-hidden">
               <div className="flex items-center">
                 <span className="truncate">{column.name}</span>
                 {column.isReadOnly && <span className="text-blue-500 ml-1">🔒</span>}

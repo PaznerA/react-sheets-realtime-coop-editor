@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Edit, ArrowDown, ArrowUp, FolderPlus, Trash2 } from 'lucide-react';
 import Cell from './Cell';
@@ -49,8 +50,7 @@ const Row: React.FC<RowProps> = ({
   };
 
   const isGroup = !!row.isGroup;
-  // Objekt cells je { [columnId: string]: Cell }, takže nemůžeme použít find()
-  // Musíme místo toho hledat položku bez columnId (nebo s prázdným columnId)
+  // Find cell without columnId (for group headers)
   const groupCell = Object.values(row.cells || {}).find(cell => !(cell as CellType).columnId) as CellType | undefined;
   
   // Indentation for hierarchical display
@@ -72,7 +72,7 @@ const Row: React.FC<RowProps> = ({
     >
       {/* Row controls */}
       <div 
-        className={`min-w-[40px] w-10 shrink-0 flex items-center justify-center border-r border-sheet-border`}
+        className="min-w-[40px] w-10 shrink-0 flex items-center justify-center border-r border-sheet-border"
       >
         {isGroup ? (
           <button 
@@ -128,7 +128,7 @@ const Row: React.FC<RowProps> = ({
       </div>
 
       {/* Cells */}
-      <div className={`flex-1 grid overflow-x-auto`} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
+      <div className="flex-1 grid grid-flow-col auto-cols-fr overflow-x-auto" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
         {columns.map((column, index) => {
           // For group rows, only show the name in the first column
           if (isGroup && index > 0) {
@@ -146,7 +146,7 @@ const Row: React.FC<RowProps> = ({
           return (
             <div 
               key={column.id} 
-              className={`border-r border-sheet-border whitespace-nowrap ${index === 0 ? 'pl-1' : ''}`} 
+              className={`border-r border-sheet-border whitespace-nowrap overflow-hidden ${index === 0 ? 'pl-1' : ''}`} 
               style={index === 0 ? { paddingLeft: `${indentPadding + 4}px` } : {}}
             >
               <Cell 

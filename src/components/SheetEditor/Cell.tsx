@@ -18,15 +18,17 @@ const Cell: React.FC<CellProps> = ({
   onStartEdit, 
   onFinishEdit 
 }) => {
-  // Pass through to the CellEditor component
+  // Ensure the cell maintains consistent width when switching between display and edit modes
   return (
-    <CellEditor
-      cell={cell}
-      column={column}
-      isEditing={isEditing}
-      onStartEdit={onStartEdit}
-      onFinishEdit={onFinishEdit}
-    />
+    <div className="w-full h-full flex items-center">
+      <CellEditor
+        cell={cell}
+        column={column}
+        isEditing={isEditing}
+        onStartEdit={onStartEdit}
+        onFinishEdit={onFinishEdit}
+      />
+    </div>
   );
 };
 
