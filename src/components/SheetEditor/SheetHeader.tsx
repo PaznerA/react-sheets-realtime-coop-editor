@@ -16,7 +16,8 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ columns }) => {
       <div className="min-w-[40px] w-10 shrink-0 border-r border-sheet-border"></div>
       
       {/* Column headers */}
-      <div className="flex-1 grid grid-flow-col auto-cols-fr overflow-x-auto" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
+      <div className="flex-1 grid grid-flow-col auto-cols-fr overflow-x-auto" 
+           style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
         {columns.map((column) => {
           // Get enum name if the column is linked to an enum
           let typeInfo = column.type;

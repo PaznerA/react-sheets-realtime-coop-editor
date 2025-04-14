@@ -42,7 +42,7 @@ const TextInput: React.FC<TextInputProps> = ({ value, onValueChange }) => {
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className="h-8 py-1 w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+      className="sheet-input h-8 py-1"
     />
   );
 };

@@ -37,7 +37,7 @@ const UserInput: React.FC<UserInputProps> = ({ value, onValueChange }) => {
   };
 
   return (
-    <div className="flex items-center h-8 w-full">
+    <div className="flex items-center h-8 w-full overflow-hidden">
       <User className="h-4 w-4 mr-2 shrink-0" />
       <Input
         ref={inputRef}
@@ -45,7 +45,7 @@ const UserInput: React.FC<UserInputProps> = ({ value, onValueChange }) => {
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-7 p-0 w-full"
+        className="sheet-input h-7 p-0"
       />
     </div>
   );

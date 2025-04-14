@@ -128,7 +128,8 @@ const Row: React.FC<RowProps> = ({
       </div>
 
       {/* Cells */}
-      <div className="flex-1 grid grid-flow-col auto-cols-fr overflow-x-auto" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
+      <div className="flex-1 grid grid-flow-col auto-cols-fr overflow-x-auto" 
+           style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
         {columns.map((column, index) => {
           // For group rows, only show the name in the first column
           if (isGroup && index > 0) {
@@ -146,7 +147,7 @@ const Row: React.FC<RowProps> = ({
           return (
             <div 
               key={column.id} 
-              className={`border-r border-sheet-border whitespace-nowrap overflow-hidden ${index === 0 ? 'pl-1' : ''}`} 
+              className="sheet-cell border-r border-sheet-border whitespace-nowrap overflow-hidden"
               style={index === 0 ? { paddingLeft: `${indentPadding + 4}px` } : {}}
             >
               <Cell 

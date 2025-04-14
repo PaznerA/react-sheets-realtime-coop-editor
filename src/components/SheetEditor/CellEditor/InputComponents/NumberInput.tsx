@@ -56,7 +56,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className="h-8 py-1 w-full min-w-[100%]"
+      className="sheet-input h-8 py-1"
     />
   );
 };

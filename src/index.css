@@ -136,6 +136,7 @@
 .sheet-cell {
   @apply box-border;
   min-width: 0;
+  width: 100%;
 }
 
 .sheet-cell-editing,
@@ -146,6 +147,37 @@
 
 /* Apply this to inputs in edit mode to prevent width changes */
 .sheet-input {
-  @apply w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0;
+  @apply w-full;
   box-sizing: border-box;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: #f0f4f8;
+  border-radius: 0;
+}
+
+.sheet-input:focus,
+.sheet-input:focus-visible {
+  @apply ring-0 ring-offset-0;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure popover menus don't shift layout */
+.sheet-select-button {
+  @apply w-full justify-between;
+  border: 0 !important;
+  background-color: #f0f4f8 !important;
+  height: 2rem !important;
+  border-radius: 0 !important;
+}
+
+/* Force input components to maintain size */
+input.sheet-input, 
+select.sheet-input, 
+button.sheet-input {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  flex-grow: 1;
 }

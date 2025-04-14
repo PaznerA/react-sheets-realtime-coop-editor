@@ -65,7 +65,7 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between h-8 min-h-[32px]"
+          className="sheet-select-button truncate"
         >
           <span className="truncate">{displayValue}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
