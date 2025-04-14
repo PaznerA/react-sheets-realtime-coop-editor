@@ -128,7 +128,7 @@ const Row: React.FC<RowProps> = ({
       </div>
 
       {/* Cells */}
-      <div className="flex-1 grid grid-flow-col auto-cols-fr overflow-x-auto" 
+      <div className="flex-1 grid grid-flow-col auto-cols-fr" 
            style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>
         {columns.map((column, index) => {
           // For group rows, only show the name in the first column

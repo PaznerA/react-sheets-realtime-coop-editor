@@ -48,16 +48,18 @@ const NumberInput: React.FC<NumberInputProps> = ({
   };
 
   return (
-    <Input
-      ref={inputRef}
-      type="number"
-      step={integer ? "1" : "0.01"}
-      value={inputValue}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      className="sheet-input h-8 py-1"
-    />
+    <div className="w-full sheet-cell-edit-container">
+      <Input
+        ref={inputRef}
+        type="number"
+        step={integer ? "1" : "0.01"}
+        value={inputValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        className="sheet-input h-8 py-1"
+      />
+    </div>
   );
 };
 

@@ -67,3 +67,17 @@ export interface SheetData {
   rows: Row[];
   currentSavepointId?: string; // Aktuální savepoint - pro time-travel
 }
+
+// For creating a new row
+export type SheetRow = Omit<Row, "id">;
+
+// For creating a new cell
+export type CellDefinition = Omit<Cell, "id">;
+
+// For revision handling
+export interface SheetRevision {
+  id: string;
+  timestamp: Date;
+  message: string;
+  author: string;
+}

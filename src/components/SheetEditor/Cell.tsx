@@ -20,13 +20,15 @@ const Cell: React.FC<CellProps> = ({
 }) => {
   return (
     <div className="w-full h-full flex items-center overflow-hidden">
-      <CellEditor
-        cell={cell}
-        column={column}
-        isEditing={isEditing}
-        onStartEdit={onStartEdit}
-        onFinishEdit={onFinishEdit}
-      />
+      <div className="w-full">
+        <CellEditor
+          cell={cell}
+          column={column}
+          isEditing={isEditing}
+          onStartEdit={onStartEdit}
+          onFinishEdit={onFinishEdit}
+        />
+      </div>
     </div>
   );
 };

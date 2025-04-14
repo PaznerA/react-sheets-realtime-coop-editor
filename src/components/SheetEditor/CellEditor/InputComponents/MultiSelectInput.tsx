@@ -59,48 +59,50 @@ const MultiSelectInput: React.FC<MultiSelectInputProps> = ({
   const displayValue = getDisplayValue();
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="sheet-select-button truncate"
-        >
-          <span className="truncate">{displayValue}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
-        {/* Only render Command when the popover is open */}
-        {open && (
-          <Command>
-            <CommandInput placeholder="Hledat..." />
-            <CommandEmpty>Žádné možnosti.</CommandEmpty>
-            <CommandGroup>
-              {safeOptions.map((option) => (
-                <CommandItem
-                  key={option.id}
-                  value={option.value} // Use value for searching
-                  onSelect={() => handleToggleOption(option.id)}
-                >
-                  <div className="flex items-center w-full">
-                    <Check
-                      className={`mr-2 h-4 w-4 ${
-                        safeValue.includes(option.id) 
-                          ? "opacity-100" 
-                          : "opacity-0"
-                      }`}
-                    />
-                    <span className="truncate">{option.value}</span>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
-        )}
-      </PopoverContent>
-    </Popover>
+    <div className="w-full sheet-cell-edit-container">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="sheet-select-button truncate w-full"
+          >
+            <span className="truncate">{displayValue}</span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0" align="start">
+          {/* Only render Command when the popover is open */}
+          {open && (
+            <Command>
+              <CommandInput placeholder="Hledat..." />
+              <CommandEmpty>Žádné možnosti.</CommandEmpty>
+              <CommandGroup>
+                {safeOptions.map((option) => (
+                  <CommandItem
+                    key={option.id}
+                    value={option.value} // Use value for searching
+                    onSelect={() => handleToggleOption(option.id)}
+                  >
+                    <div className="flex items-center w-full">
+                      <Check
+                        className={`mr-2 h-4 w-4 ${
+                          safeValue.includes(option.id) 
+                            ? "opacity-100" 
+                            : "opacity-0"
+                        }`}
+                      />
+                      <span className="truncate">{option.value}</span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          )}
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 };
 

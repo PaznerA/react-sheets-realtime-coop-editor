@@ -37,7 +37,7 @@ const UserInput: React.FC<UserInputProps> = ({ value, onValueChange }) => {
   };
 
   return (
-    <div className="flex items-center h-8 w-full overflow-hidden">
+    <div className="flex items-center h-8 w-full overflow-hidden sheet-cell-edit-container">
       <User className="h-4 w-4 mr-2 shrink-0" />
       <Input
         ref={inputRef}
@@ -45,7 +45,7 @@ const UserInput: React.FC<UserInputProps> = ({ value, onValueChange }) => {
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="sheet-input h-7 p-0"
+        className="sheet-input h-7 p-0 min-w-[calc(100%-1.5rem)]"
       />
     </div>
   );

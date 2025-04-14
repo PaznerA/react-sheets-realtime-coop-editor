@@ -36,14 +36,16 @@ const TextInput: React.FC<TextInputProps> = ({ value, onValueChange }) => {
   };
 
   return (
-    <Input
-      ref={inputRef}
-      value={inputValue}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      className="sheet-input h-8 py-1"
-    />
+    <div className="w-full sheet-cell-edit-container">
+      <Input
+        ref={inputRef}
+        value={inputValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        className="sheet-input h-8 py-1 min-w-[100%]"
+      />
+    </div>
   );
 };
 

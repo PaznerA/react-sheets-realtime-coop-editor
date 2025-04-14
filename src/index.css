@@ -145,15 +145,23 @@
   min-width: 0;
 }
 
+/* Grid layout for cells - ensures consistent sizing */
+.sheet-editor-grid {
+  display: grid;
+  grid-auto-flow: column;
+}
+
 /* Apply this to inputs in edit mode to prevent width changes */
 .sheet-input {
   @apply w-full;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
   border: 0 !important;
   outline: none !important;
   box-shadow: none !important;
   background-color: #f0f4f8;
   border-radius: 0;
+  margin: 0 !important;
+  padding: 0 4px !important;
 }
 
 .sheet-input:focus,
@@ -163,6 +171,16 @@
   box-shadow: none !important;
 }
 
+/* Container for edit inputs to ensure consistent width */
+.sheet-cell-edit-container {
+  width: 100% !important;
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-sizing: border-box !important;
+  padding: 0 8px;
+}
+
 /* Ensure popover menus don't shift layout */
 .sheet-select-button {
   @apply w-full justify-between;
@@ -170,6 +188,8 @@
   background-color: #f0f4f8 !important;
   height: 2rem !important;
   border-radius: 0 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
 }
 
 /* Force input components to maintain size */
@@ -180,4 +200,11 @@ button.sheet-input {
   min-width: 100% !important;
   max-width: 100% !important;
   flex-grow: 1;
+}
+
+/* Fix for grid alignment */
+.sheet-cell,
+.sheet-header-cell {
+  box-sizing: border-box;
+  position: relative;
 }
